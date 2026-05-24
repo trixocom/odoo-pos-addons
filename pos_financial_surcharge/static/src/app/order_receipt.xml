@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!--
+        Extensión del receipt POS para mostrar:
+        - El plan de cuotas elegido (cardPlanName)
+        - El reintegro del banco (cardBankDiscount) cuando aplica
+
+        Como `paymentLines` viene del controller del receipt y `payment_method_id`
+        es el m2o al método de pago, accedemos directamente a los campos
+        custom seteados por FinancialSurchargePopup en el payment line.
+    -->
+    <t t-name="pos_financial_surcharge.OrderReceiptPaymentLine"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('paymentlines')]" position="after">
+            <t t-foreach="paymentLines" t-as="line" t-key="'fs_' + line_index">
+                <t t-if="line.cardPlanName">
+                    <div class="pos-receipt-financial-surcharge text-start" style="font-size: 90%;">
+                        <span>
+                            <i class="fa fa-credit-card me-1"/>
+                            <t t-esc="line.cardPlanName"/>
+                        </span>
+                    </div>
+                    <t t-if="line.cardBankDiscount">
+                        <div class="pos-receipt-financial-bank-discount text-start"
+                             style="font-size: 90%;">
+                            <span>
+                                Reintegro banco:
+                                <t t-esc="line.cardBankDiscount"/>%
+                            </span>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

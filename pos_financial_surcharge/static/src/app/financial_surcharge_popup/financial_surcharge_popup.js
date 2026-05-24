@@ -51,13 +51,34 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
     }
 
     /**
+     * Calcula el priceIncluded de una baseLine con un price_unit y el set de
+     * impuestos no incluidos en precio del producto de recargo.
+     */
+    _computeInclWithPriceUnit(priceUnit, taxes, company) {
+        const baseLine = accountTaxHelpers.prepare_base_line_for_taxes_computation(
+            {},
+            {
+                tax_ids: taxes,
+                quantity: 1,
+                price_unit: priceUnit,
+                currency_id: this.props.pos.currency,
+            }
+        );
+        accountTaxHelpers.add_tax_details_in_base_line(baseLine, company);
+        accountTaxHelpers.round_base_lines_tax_details([baseLine], company);
+        return baseLine.tax_details.total_included_currency;
+    }
+
+    /**
      * Calcula el price_unit (sin impuesto) tal que el total INCLUIDO de la
      * orderline sea exactamente `targetIncl`. En Odoo 18 esto lo hacía
      * `compute_price_force_price_include`, que en 19 ya no existe: usamos
-     * el helper de account_tax y ajustamos.
+     * el helper de account_tax y, si el resultado no cae en la grilla del
+     * currency rounding, hacemos una búsqueda fina en ±N pasos de rounding
+     * para minimizar el error de centavos (fix bug #19).
      *
      * @param {number} targetIncl monto con impuestos incluidos (puede ser <0)
-     * @param {object} product product.template o product.product del recargo
+     * @param {object} product product.product del recargo
      * @returns {number} price_unit
      */
     _priceUnitFromInclTotal(targetIncl, product) {
@@ -68,30 +89,41 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
         if (!taxes.length) {
             return targetIncl;
         }
-        // Tomamos sólo impuestos no incluidos en precio: son los que suman al
-        // total. Los price_include ya están dentro de price_unit.
+        // Sólo importan los impuestos NO incluidos en precio (los que suman).
         const taxesAddingUp = taxes.filter((t) => !t.price_include);
         if (!taxesAddingUp.length) {
             return targetIncl;
         }
-        // Probamos con price_unit = targetIncl (asumimos sin impuesto extra),
-        // calculamos el total incluido y dividimos por el ratio para corregir.
-        const baseLine = accountTaxHelpers.prepare_base_line_for_taxes_computation(
-            {},
-            {
-                tax_ids: taxes,
-                quantity: 1,
-                price_unit: targetIncl,
-                currency_id: this.props.pos.currency,
-            }
+        // 1) Estimación analítica: priceUnit = targetIncl² / totalIncl(con pu=targetIncl)
+        const inclWithTarget = this._computeInclWithPriceUnit(
+            targetIncl,
+            taxes,
+            company
         );
-        accountTaxHelpers.add_tax_details_in_base_line(baseLine, company);
-        accountTaxHelpers.round_base_lines_tax_details([baseLine], company);
-        const totalIncl = baseLine.tax_details.total_included_currency;
-        if (!totalIncl) {
+        if (!inclWithTarget) {
             return targetIncl;
         }
-        return (targetIncl * targetIncl) / totalIncl;
+        let bestPu = (targetIncl * targetIncl) / inclWithTarget;
+
+        // 2) Refinamiento fino: probamos ±2 pasos de currency.rounding sobre
+        //    el redondeo natural del price_unit, y nos quedamos con el que
+        //    produzca el priceIncluded más cercano a targetIncl. Esto evita
+        //    perder centavos cuando el cociente no cae en la grilla.
+        const rounding = this.props.pos.currency?.rounding || 0.01;
+        const roundedPu = Math.round(bestPu / rounding) * rounding;
+        let bestDiff = Number.POSITIVE_INFINITY;
+        let bestRefined = roundedPu;
+        for (let step = -2; step <= 2; step += 1) {
+            const testPu = roundedPu + step * rounding;
+            const incl = this._computeInclWithPriceUnit(testPu, taxes, company);
+            if (incl === undefined || incl === null) continue;
+            const diff = Math.abs(incl - targetIncl);
+            if (diff < bestDiff) {
+                bestDiff = diff;
+                bestRefined = testPu;
+            }
+        }
+        return bestRefined;
     }
 
     async _confirm() {
@@ -108,6 +140,8 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
         // Coeficiente 1.0 (sin recargo): no agregamos línea, sólo cerramos.
         if (!diffAmount) {
             this.props.line.cardPlanName = inst.name;
+            this.props.line.cardBankDiscount = inst.bank_discount || 0;
+            this.props.line.cardInstallmentCount = inst.divisor || 1;
             return this.execButton(this.props.confirm);
         }
 
@@ -142,6 +176,8 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
             (newLine && (newLine.priceIncl || newLine.price_subtotal_incl)) || diffAmount;
         this.props.line.amount = this.state.rawAmount + lineIncl;
         this.props.line.cardPlanName = inst.name;
+        this.props.line.cardBankDiscount = inst.bank_discount || 0;
+        this.props.line.cardInstallmentCount = inst.divisor || 1;
         return this.execButton(this.props.confirm);
     }
 
