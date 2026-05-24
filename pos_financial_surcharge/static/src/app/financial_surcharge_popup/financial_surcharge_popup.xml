@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <t t-name="pos_financial_surcharge.FinancialSurchargeConfirmationDialog"
+       t-inherit="web.ConfirmationDialog"
+       t-inherit-mode="primary">
+        <xpath expr="//p" position="replace">
+            <div class="d-flex flex-column align-items-center justify-content-center">
+                <p class="text-prewrap" style="font-weight: bold;">
+                    <t t-esc="props.title"/>
+                </p>
+                <div class="mt-1">
+                    <strong>Monto a cobrar: </strong>
+                    <t t-esc="amountDisplay"/>
+                </div>
+                <select class="installment_select form-select form-select-md mt-2"
+                        t-model="state.selectedInstallment">
+                    <option value="" selected="true">
+                        -- Seleccioná un plan de cuotas --
+                    </option>
+                    <t t-foreach="props.cards" t-as="card" t-key="card.id">
+                        <optgroup t-att-label="card.name">
+                            <t t-foreach="card.installments" t-as="inst" t-key="inst.id">
+                                <option t-att-value="inst.id">
+                                    <t t-esc="inst.name"/> —
+                                    <t t-esc="inst.divisor"/> cuotas de
+                                    <t t-esc="formatCurrency(state.rawAmount / inst.divisor * inst.surcharge_coefficient)"/>
+                                    (Total:
+                                    <t t-esc="formatCurrency(state.rawAmount * inst.surcharge_coefficient)"/>)
+                                    <t t-if="inst.bank_discount">
+                                        — Reintegro banco:
+                                        <t t-esc="inst.bank_discount"/>%
+                                    </t>
+                                </option>
+                            </t>
+                        </optgroup>
+                    </t>
+                </select>
+            </div>
+        </xpath>
+    </t>
+
+</templates>

@@ -1,0 +1,4 @@
+[submodule "vendor/account-payment"]
+	path = vendor/account-payment
+	url = https://github.com/ingadhoc/account-payment.git
+	branch = 19.0

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem action="card_installment.action_account_card"
+              id="menu_account_card"
+              parent="point_of_sale.menu_point_config_product"
+              sequence="20"/>
+    <menuitem action="card_installment.action_card_installment"
+              id="menu_account_financial_plans"
+              parent="point_of_sale.menu_point_config_product"
+              sequence="21"/>
+</odoo>
