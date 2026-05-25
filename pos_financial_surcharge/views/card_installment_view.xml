@@ -28,10 +28,18 @@
         <field name="inherit_id" ref="card_installment.account_card_form"/>
         <field name="arch" type="xml">
 
-            <!-- Cambiar el título a algo más ancho y con placeholder claro -->
-            <xpath expr="//h1/field[@name='name']" position="attributes">
-                <attribute name="placeholder">Nombre de la promoción (ej.: Visa, Master, Promo Santander 6 cuotas)</attribute>
-                <attribute name="class">o_field_inline w-100</attribute>
+            <!--
+                Reemplazamos el h1 entero por uno con flex/width 100% para que
+                el input del nombre se expanda y no se trunque (Odoo le mete
+                un display inline-block por default; w-100 solo no alcanza).
+            -->
+            <xpath expr="//h1" position="replace">
+                <h1 class="d-flex w-100 mb-0">
+                    <field name="name"
+                           class="flex-grow-1 w-100"
+                           style="width:100%;"
+                           placeholder="Nombre de la promoción (ej.: Visa Santander 6 cuotas)"/>
+                </h1>
             </xpath>
 
             <!-- Hacer visible available_in_pos junto al company_id -->
@@ -42,6 +50,11 @@
             <!-- Renombrar el grupo de installments y mejorar la lista interna -->
             <xpath expr="//group[@string='Installment plan']" position="attributes">
                 <attribute name="string">Planes de cuotas</attribute>
+            </xpath>
+
+            <!-- Asegurar que la lista inline siga editable -->
+            <xpath expr="//field[@name='installment_ids']/list" position="attributes">
+                <attribute name="editable">bottom</attribute>
             </xpath>
 
             <!-- Mejorar la lista inline: mostrar todas las columnas relevantes -->

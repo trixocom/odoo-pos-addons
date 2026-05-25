@@ -1,0 +1,30 @@
+/*
+    Form de account.card (Planes de cuotas) — overrides UX:
+
+    1. El input del nombre dentro del <h1> debe ocupar todo el ancho
+       disponible del sheet. Odoo por default le pone display:inline-block
+       y se trunca si el texto es largo (caso Promo Santander 6 cuotas s/int).
+
+    2. El one2many de planes adentro del form tiene que ser cómodo de editar:
+       hacemos las filas un poco más altas y los inputs con más padding.
+*/
+
+.o_form_view .o_form_sheet:has([name='installment_ids']) {
+    h1 > [name='name'] {
+        display: block;
+        width: 100%;
+        min-width: 0;
+
+        input {
+            width: 100%;
+            min-width: 0;
+        }
+    }
+
+    .o_field_x2many_list .o_list_table {
+        input,
+        .o_input {
+            min-height: 32px;
+        }
+    }
+}
