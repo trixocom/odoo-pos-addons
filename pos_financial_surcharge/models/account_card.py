@@ -6,7 +6,7 @@ class AccountCard(models.Model):
     _inherit = ["account.card", "pos.load.mixin"]
 
     available_in_pos = fields.Boolean(
-        string="Available in POS",
+        string="Disponible en POS",
         help="Tildá esta tarjeta para que se ofrezca al cobrar en el Punto de Venta.",
         default=False,
     )

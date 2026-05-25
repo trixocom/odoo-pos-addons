@@ -1,6 +1,6 @@
 {
     "name": "POS Financial Surcharge",
-    "version": "19.0.1.3.1",
+    "version": "19.0.1.4.0",
     "category": "Sales/Point of Sale",
     "sequence": 6,
     "summary": "Recargo o descuento financiero por forma de pago en POS",
@@ -22,7 +22,6 @@ ajustando el monto del payment line para que la orden cierre.
         "card_installment",
     ],
     "data": [
-        "data/payment_terminal_selection.xml",
         "views/card_installment_view.xml",
         "views/pos_payment_method.xml",
         "wizards/res_config_settings_views.xml",
