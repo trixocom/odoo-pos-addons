@@ -1,22 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        Atajos a las pantallas de tarjetas y planes financieros desde el menú
-        Punto de Venta → Configuración. Las acciones vienen de card_installment
-        (donde su menú original está bajo "Pagos en línea"); acá replicamos los
-        accesos para no obligar al admin del POS a buscarlas en Contabilidad.
+        Un solo menú "Planes de cuotas" bajo Punto de Venta → Configuración,
+        apuntando a account.card. La idea es que el admin entre acá, vea la
+        lista de "promociones" (Visa, Master, Promo Santander, etc.) y
+        configure cada una con sus planes en una sola pantalla.
 
-        Damos un `name` explícito al menuitem para que se traduzca via el
-        archivo i18n/es_AR.po que carga este módulo.
+        El módulo card_installment de ADHOC trae menús bajo "Pagos en línea"
+        de Contabilidad; los dejamos como están (no nos competen) y armamos
+        nuestro acceso propio desde el POS.
     -->
-    <menuitem name="Cards"
+    <menuitem name="Planes de cuotas"
               action="card_installment.action_account_card"
               id="menu_account_card"
               parent="point_of_sale.menu_point_config_product"
               sequence="20"/>
-    <menuitem name="Installments"
-              action="card_installment.action_card_installment"
-              id="menu_account_financial_plans"
-              parent="point_of_sale.menu_point_config_product"
-              sequence="21"/>
+
+    <!--
+        Form de account.card mejorado: ancho completo para el nombre, mejor
+        agrupación, columnas relevantes visibles por defecto en la lista
+        inline de planes (incluido el reintegro del banco). El help del
+        coeficiente explica el formato (1.06 = 6%) directamente en la UI.
+    -->
+    <record id="view_account_card_form_pos_financial_surcharge" model="ir.ui.view">
+        <field name="name">account.card.form.pos.financial.surcharge</field>
+        <field name="model">account.card</field>
+        <field name="inherit_id" ref="card_installment.account_card_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Cambiar el título a algo más ancho y con placeholder claro -->
+            <xpath expr="//h1/field[@name='name']" position="attributes">
+                <attribute name="placeholder">Nombre de la promoción (ej.: Visa, Master, Promo Santander 6 cuotas)</attribute>
+                <attribute name="class">o_field_inline w-100</attribute>
+            </xpath>
+
+            <!-- Hacer visible available_in_pos junto al company_id -->
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="available_in_pos" widget="boolean_toggle"/>
+            </xpath>
+
+            <!-- Renombrar el grupo de installments y mejorar la lista interna -->
+            <xpath expr="//group[@string='Installment plan']" position="attributes">
+                <attribute name="string">Planes de cuotas</attribute>
+            </xpath>
+
+            <!-- Mejorar la lista inline: mostrar todas las columnas relevantes -->
+            <xpath expr="//field[@name='installment_ids']/list/field[@name='surcharge_coefficient']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Coeficiente</attribute>
+            </xpath>
+            <xpath expr="//field[@name='installment_ids']/list/field[@name='bank_discount']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Reintegro banco %</attribute>
+            </xpath>
+            <xpath expr="//field[@name='installment_ids']/list/field[@name='installment']" position="attributes">
+                <attribute name="string">Nº cuotas (gateway)</attribute>
+            </xpath>
+            <xpath expr="//field[@name='installment_ids']/list/field[@name='divisor']" position="attributes">
+                <attribute name="string">Divisor</attribute>
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='installment_ids']/list/field[@name='name']" position="attributes">
+                <attribute name="string">Plan</attribute>
+                <attribute name="placeholder">Ej.: 1 cuota, 3 cuotas con interés</attribute>
+            </xpath>
+
+            <!-- Ayuda inline para el admin: explicar coeficientes y divisor -->
+            <xpath expr="//group[@string='Planes de cuotas']" position="after">
+                <div class="alert alert-info" role="alert">
+                    <strong>Cómo cargar los planes:</strong>
+                    <ul class="mb-0">
+                        <li><strong>Coeficiente</strong>: <code>1.00</code> = sin recargo,
+                            <code>1.06</code> = recargo 6%, <code>0.90</code> = descuento 10%.</li>
+                        <li><strong>Divisor</strong>: por cuántas cuotas se divide el total
+                            cobrado al cliente (sólo para mostrar el monto por cuota en el popup
+                            del cajero).</li>
+                        <li><strong>Nº cuotas (gateway)</strong>: el número que se le informa
+                            al gateway / posnet (puede coincidir o no con el divisor).</li>
+                        <li><strong>Reintegro banco %</strong>: porcentaje que el banco le
+                            devuelve al cliente. <em>Solo informativo</em>: aparece en el popup
+                            y en el ticket, no afecta el monto que cobramos.</li>
+                    </ul>
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        Lista standalone de account.card.installment (cuando se navega desde
+        Pagos en línea de Contabilidad u otras vistas). Mostramos
+        bank_discount por defecto para que se vea siempre.
+    -->
+    <record id="view_card_installment_list_pos_financial_surcharge" model="ir.ui.view">
+        <field name="name">card.installment.list.pos.financial.surcharge</field>
+        <field name="model">account.card.installment</field>
+        <field name="inherit_id" ref="card_installment.card_installment_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='bank_discount']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="string">Reintegro banco %</attribute>
+            </xpath>
+            <xpath expr="//field[@name='surcharge_coefficient']" position="attributes">
+                <attribute name="string">Coeficiente</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!--
+        Cambiamos el `name` de la acción para que se vea "Planes de cuotas"
+        en el breadcrumb (en lugar de "Cards" / "Tarjetas").
+    -->
+    <record id="card_installment.action_account_card" model="ir.actions.act_window">
+        <field name="name">Planes de cuotas</field>
+    </record>
+
 </odoo>
