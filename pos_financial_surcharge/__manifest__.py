@@ -1,6 +1,6 @@
 {
     "name": "POS Financial Surcharge",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Sales/Point of Sale",
     "sequence": 6,
     "summary": "Recargo o descuento financiero por forma de pago en POS",

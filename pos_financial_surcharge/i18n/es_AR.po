@@ -12,6 +12,12 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #. module: pos_financial_surcharge
+#. odoo-python
+#: code:addons/pos_financial_surcharge/__manifest__.py:0
+msgid "POS Financial Surcharge"
+msgstr "Recargo financiero en POS"
+
+#. module: pos_financial_surcharge
 #: model:ir.ui.menu,name:pos_financial_surcharge.menu_account_card
 msgid "Cards"
 msgstr "Tarjetas"
@@ -43,9 +49,75 @@ msgid ""
 "configurado como 'Card financial surcharge'."
 msgstr ""
 "Tarjetas que el cajero podrá ofrecer cuando este método de pago esté "
-"configurado como 'Card financial surcharge'."
+"configurado como 'Recargo financiero por tarjeta'."
 
 #. module: pos_financial_surcharge
 #: model:ir.model.fields.selection,name:pos_financial_surcharge.selection__pos_payment_method__use_payment_terminal__financial_surcharge
 msgid "Card financial surcharge"
 msgstr "Recargo financiero por tarjeta"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge.js:0
+msgid "No hay planes de cuotas configurados para las tarjetas de este método de pago."
+msgstr "No hay planes de cuotas configurados para las tarjetas de este método de pago."
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge.js:0
+msgid "Error de configuración"
+msgstr "Error de configuración"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge.js:0
+msgid "Falta configurar el 'Producto para recargo financiero' en Punto de Venta → Ajustes."
+msgstr "Falta configurar el 'Producto para recargo financiero' en Punto de Venta → Ajustes."
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge.js:0
+msgid "Seleccionar plan de cuotas"
+msgstr "Seleccionar plan de cuotas"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge.js:0
+msgid "Error procesando el plan financiero"
+msgstr "Error procesando el plan financiero"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "Confirmar pago"
+msgstr "Confirmar pago"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "Cancelar pago"
+msgstr "Cancelar pago"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "Plan financiero"
+msgstr "Plan financiero"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "Tenés que elegir un plan de cuotas"
+msgstr "Tenés que elegir un plan de cuotas"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "Atención"
+msgstr "Atención"
+
+#. module: pos_financial_surcharge
+#. odoo-javascript
+#: code:addons/pos_financial_surcharge/static/src/app/financial_surcharge_popup/financial_surcharge_popup.js:0
+msgid "No hay producto de recargo financiero configurado para esta empresa."
+msgstr "No hay producto de recargo financiero configurado para esta empresa."

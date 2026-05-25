@@ -5,6 +5,11 @@ from odoo.exceptions import ValidationError
 class PosPaymentMethod(models.Model):
     _inherit = "pos.payment.method"
 
+    # Default: cualquier método de pago nuevo arranca como recargo financiero
+    # por tarjeta. Si en el futuro se instala otro terminal y el usuario quiere
+    # cambiar, solo elige otro valor del selection.
+    use_payment_terminal = fields.Selection(default="financial_surcharge")
+
     available_card_ids = fields.Many2many(
         "account.card",
         string="Available Cards",
