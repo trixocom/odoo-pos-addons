@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Registramos explícitamente el valor 'financial_surcharge' como record
+        de ir.model.fields.selection. Es necesario para que el label sea
+        traducible vía i18n/es_AR.po: el método _get_payment_terminal_selection()
+        agrega el valor en runtime pero los lambda no generan registros y
+        Odoo no encuentra entrada qué traducir.
+    -->
+    <record id="selection_use_payment_terminal_financial_surcharge"
+            model="ir.model.fields.selection">
+        <field name="field_id"
+               search="[('model','=','pos.payment.method'),('name','=','use_payment_terminal')]"/>
+        <field name="value">financial_surcharge</field>
+        <field name="name">Card financial surcharge</field>
+    </record>
+</odoo>

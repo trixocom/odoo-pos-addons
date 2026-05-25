@@ -52,7 +52,7 @@ msgstr ""
 "configurado como 'Recargo financiero por tarjeta'."
 
 #. module: pos_financial_surcharge
-#: model:ir.model.fields.selection,name:pos_financial_surcharge.selection__pos_payment_method__use_payment_terminal__financial_surcharge
+#: model:ir.model.fields.selection,name:pos_financial_surcharge.selection_use_payment_terminal_financial_surcharge
 msgid "Card financial surcharge"
 msgstr "Recargo financiero por tarjeta"
 
