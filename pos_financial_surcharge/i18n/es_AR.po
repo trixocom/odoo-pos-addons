@@ -1,0 +1,51 @@
+# Traducción al español rioplatense (Argentina) del módulo pos_financial_surcharge.
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: Trixocom\n"
+"Language-Team: Spanish (Argentina)\n"
+"Language: es_AR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. module: pos_financial_surcharge
+#: model:ir.ui.menu,name:pos_financial_surcharge.menu_account_card
+msgid "Cards"
+msgstr "Tarjetas"
+
+#. module: pos_financial_surcharge
+#: model:ir.ui.menu,name:pos_financial_surcharge.menu_account_financial_plans
+msgid "Installments"
+msgstr "Cuotas"
+
+#. module: pos_financial_surcharge
+#: model:ir.model.fields,field_description:pos_financial_surcharge.field_pos_payment_method__available_card_ids
+msgid "Available Cards"
+msgstr "Tarjetas disponibles"
+
+#. module: pos_financial_surcharge
+#: model:ir.model.fields,field_description:pos_financial_surcharge.field_account_card__available_in_pos
+msgid "Available in POS"
+msgstr "Disponible en POS"
+
+#. module: pos_financial_surcharge
+#: model:ir.model.fields,help:pos_financial_surcharge.field_account_card__available_in_pos
+msgid "Tildá esta tarjeta para que se ofrezca al cobrar en el Punto de Venta."
+msgstr "Tildá esta tarjeta para que se ofrezca al cobrar en el Punto de Venta."
+
+#. module: pos_financial_surcharge
+#: model:ir.model.fields,help:pos_financial_surcharge.field_pos_payment_method__available_card_ids
+msgid ""
+"Tarjetas que el cajero podrá ofrecer cuando este método de pago esté "
+"configurado como 'Card financial surcharge'."
+msgstr ""
+"Tarjetas que el cajero podrá ofrecer cuando este método de pago esté "
+"configurado como 'Card financial surcharge'."
+
+#. module: pos_financial_surcharge
+#: model:ir.model.fields.selection,name:pos_financial_surcharge.selection__pos_payment_method__use_payment_terminal__financial_surcharge
+msgid "Card financial surcharge"
+msgstr "Recargo financiero por tarjeta"

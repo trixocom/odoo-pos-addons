@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <menuitem action="card_installment.action_account_card"
+    <!--
+        Atajos a las pantallas de tarjetas y planes financieros desde el menú
+        Punto de Venta → Configuración. Las acciones vienen de card_installment
+        (donde su menú original está bajo "Pagos en línea"); acá replicamos los
+        accesos para no obligar al admin del POS a buscarlas en Contabilidad.
+
+        Damos un `name` explícito al menuitem para que se traduzca via el
+        archivo i18n/es_AR.po que carga este módulo.
+    -->
+    <menuitem name="Cards"
+              action="card_installment.action_account_card"
               id="menu_account_card"
               parent="point_of_sale.menu_point_config_product"
               sequence="20"/>
-    <menuitem action="card_installment.action_card_installment"
+    <menuitem name="Installments"
+              action="card_installment.action_card_installment"
               id="menu_account_financial_plans"
               parent="point_of_sale.menu_point_config_product"
               sequence="21"/>
