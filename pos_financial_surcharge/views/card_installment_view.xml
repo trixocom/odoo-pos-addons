@@ -48,7 +48,7 @@
             </xpath>
 
             <!-- Renombrar el grupo de installments y mejorar la lista interna -->
-            <xpath expr="//group[@string='Installment plan']" position="attributes">
+            <xpath expr="//group[field[@name='installment_ids']]" position="attributes">
                 <attribute name="string">Planes de cuotas</attribute>
             </xpath>
 
@@ -79,7 +79,7 @@
             </xpath>
 
             <!-- Ayuda inline para el admin: explicar coeficientes y divisor -->
-            <xpath expr="//group[@string='Planes de cuotas']" position="after">
+            <xpath expr="//group[field[@name='installment_ids']]" position="after">
                 <div class="alert alert-info" role="alert">
                     <strong>Cómo cargar los planes:</strong>
                     <ul class="mb-0">
