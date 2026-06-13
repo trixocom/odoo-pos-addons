@@ -8,6 +8,7 @@ subcarpeta vive un módulo independiente.
 | Módulo | Versión | Resumen |
 |---|---|---|
 | `pos_financial_surcharge` | 19.0.1.1.0 | Recargo / descuento financiero por forma de pago en POS. Basado en `card_installment` de ADHOC. |
+| `pos_promotions` | 19.0.1.0.0 | Promociones en POS: descuento de la casa (línea negativa única) + reintegro del banco informado en el ticket + nota de crédito fiscal automática (CAE) por el importe de la devolución, en la misma transacción. Depende de `l10n_ar_pos_edi`. |
 
 ## Dependencia externa
 

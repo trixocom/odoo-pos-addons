@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+
+    <!--
+        Muestra en el ticket POS:
+        - El nombre de la promoción aplicada.
+        - El reintegro del banco (importe y %). Es SOLO informativo: la venta
+          se cobró por el total; el reintegro lo devuelve el banco al cliente.
+    -->
+    <t t-name="pos_promotions.OrderReceiptPromotion"
+       t-inherit="point_of_sale.OrderReceipt"
+       t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('paymentlines')]" position="after">
+            <t t-if="order.promotion_id">
+                <div class="pos-receipt-promotion text-start mt-1" style="font-size: 90%;">
+                    <span>
+                        <i class="fa fa-tags me-1"/>
+                        <strong>Promo: </strong>
+                        <t t-esc="order.promotion_id.name"/>
+                    </span>
+                </div>
+                <t t-if="order.promo_bank_amount">
+                    <div class="pos-receipt-promotion-bank text-start" style="font-size: 90%;">
+                        <span>
+                            Reintegro banco
+                            <t t-if="order.promo_bank_pct">
+                                (<t t-esc="order.promo_bank_pct"/>%)
+                            </t>:
+                            <t t-esc="formatCurrency(order.promo_bank_amount)"/>
+                        </span>
+                    </div>
+                    <div class="pos-receipt-promotion-note text-start text-muted"
+                         style="font-size: 80%;">
+                        <span>Reintegro a cargo del banco. No se descuenta del total.</span>
+                    </div>
+                </t>
+            </t>
+        </xpath>
+    </t>
+
+</templates>

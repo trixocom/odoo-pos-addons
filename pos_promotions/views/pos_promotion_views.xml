@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_pos_promotion_list" model="ir.ui.view">
+        <field name="name">pos.promotion.list</field>
+        <field name="model">pos.promotion</field>
+        <field name="arch" type="xml">
+            <list string="Promociones" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="house_discount_pct"/>
+                <field name="bank_discount_pct"/>
+                <field name="bank_base"/>
+                <field name="bank_nc_with_iva" widget="boolean_toggle"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_promotion_form" model="ir.ui.view">
+        <field name="name">pos.promotion.form</field>
+        <field name="model">pos.promotion</field>
+        <field name="arch" type="xml">
+            <form string="Promoción">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"
+                                   placeholder="Nombre de la promo (ej.: Banco Provincia 30%)"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Descuento de la casa">
+                            <field name="house_discount_pct"/>
+                            <div class="text-muted" colspan="2">
+                                Se aplica como descuento general (línea negativa única)
+                                etiquetada con el nombre de la promo. Es lo que el cliente
+                                paga de menos.
+                            </div>
+                        </group>
+                        <group string="Devolución del banco">
+                            <field name="bank_discount_pct"/>
+                            <field name="bank_base"/>
+                            <field name="bank_nc_with_iva"/>
+                            <div class="text-muted" colspan="2">
+                                No se descuenta del total: se informa en el ticket y dispara
+                                la nota de crédito fiscal por ese importe (para no pagar el
+                                IVA de la devolución). No se devuelve dinero ni mercadería.
+                            </div>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_pos_promotion" model="ir.actions.act_window">
+        <field name="name">Promociones</field>
+        <field name="res_model">pos.promotion</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Creá tu primera promoción de POS
+            </p>
+            <p>
+                Cada promoción define el % de descuento de la casa y el % que devuelve
+                el banco. El descuento de la casa se aplica sobre la orden; la devolución
+                del banco se informa en el ticket y genera la nota de crédito fiscal.
+            </p>
+        </field>
+    </record>
+
+    <menuitem name="Promociones"
+              action="action_pos_promotion"
+              id="menu_pos_promotion"
+              parent="point_of_sale.menu_point_config_product"
+              sequence="25"/>
+
+</odoo>

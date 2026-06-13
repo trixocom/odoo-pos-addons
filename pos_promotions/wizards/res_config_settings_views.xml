@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_pos_promotions" model="ir.ui.view">
+        <field name="name">res.config.settings.form.pos.promotions</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='pos_payment_section']" position="inside">
+                <setting id="pos_promo_discount_product_setting"
+                         title="Producto usado como línea negativa cuando se aplica el descuento de la casa de una promoción."
+                         string="Promociones POS">
+                    <div class="content-group">
+                        <div class="row mt16">
+                            <label string="Producto para descuento de promoción"
+                                   for="pos_promo_discount_product_id"
+                                   class="col-lg-4 o_light_label"/>
+                            <field name="pos_promo_discount_product_id"
+                                   domain="[('available_in_pos', '=', True)]"/>
+                        </div>
+                        <div class="text-muted">
+                            Producto (disponible en POS, con IVA configurado) que se agrega
+                            como línea negativa al aplicar el descuento de la casa. La nota de
+                            crédito de la devolución bancaria usa el IVA de este producto.
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>
