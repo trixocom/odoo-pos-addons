@@ -14,6 +14,13 @@ class PosOrder(models.Model):
         string="Promoción aplicada",
         help="Promoción elegida en el POS para esta orden.",
     )
+    promotion_pos_id = fields.Integer(
+        string="Promo (id POS)",
+        copy=False,
+        help="ID de la promoción enviado desde el POS. Campo escalar (no "
+        "relacional) para el round-trip frontend→backend; se mapea a "
+        "promotion_id al crear la orden.",
+    )
     promo_bank_pct = fields.Float(
         string="Devolución banco (%)",
         digits=(16, 4),
@@ -36,11 +43,21 @@ class PosOrder(models.Model):
 
     @api.model
     def _load_pos_data_fields(self, config):
-        return super()._load_pos_data_fields(config) + [
-            "promotion_id",
-            "promo_bank_pct",
-            "promo_bank_amount",
-        ]
+        # Solo un Integer escalar viaja en el payload del POS. NO agregar campos
+        # relacionales (m2o) ni Monetary acá: rompen el setup del modelo de la
+        # orden en el frontend OWL (deja la o2m `lines` sin inicializar y
+        # crashea `_computeAllPrices`). El resto (promotion_id, importes) se
+        # resuelve/guarda en el backend.
+        return super()._load_pos_data_fields(config) + ["promotion_pos_id"]
+
+    def _process_order(self, order, existing_order):
+        order_id = super()._process_order(order, existing_order)
+        rec = self.browse(order_id)
+        if rec.promotion_pos_id and not rec.promotion_id:
+            promo = self.env["pos.promotion"].browse(rec.promotion_pos_id).exists()
+            if promo:
+                rec.promotion_id = promo.id
+        return order_id
 
     # ------------------------------------------------------------------
     # Generación de la factura + NC de devolución bancaria
@@ -201,6 +218,8 @@ class PosOrder(models.Model):
         nc.sudo().with_company(company).action_post()
 
         self.promo_bank_nc_id = nc.id
+        self.promo_bank_pct = promo.bank_discount_pct
+        self.promo_bank_amount = reintegro
         _logger.info(
             "[pos_promotions] NC de devolución bancaria %s emitida (CAE %s) por "
             "%s contra factura %s.",

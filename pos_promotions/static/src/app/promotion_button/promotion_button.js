@@ -25,12 +25,12 @@ patch(ControlButtons.prototype, {
             return;
         }
 
-        const current = order.promotion_id;
+        const currentId = order.promotion_pos_id || 0;
         const selectionList = [
             {
                 id: 0,
                 label: _t("Sin promoción"),
-                isSelected: !current,
+                isSelected: !currentId,
                 item: false,
             },
             ...promotions.map((p) => ({
@@ -40,7 +40,7 @@ patch(ControlButtons.prototype, {
                     house: p.house_discount_pct,
                     bank: p.bank_discount_pct,
                 }),
-                isSelected: current && current.id === p.id,
+                isSelected: currentId === p.id,
                 item: p,
             })),
         ];
@@ -58,15 +58,19 @@ patch(ControlButtons.prototype, {
 
     /**
      * Quita la promo anterior (si había) y aplica la nueva: una línea negativa
-     * de descuento de la casa etiquetada con el nombre de la promo, y guarda los
-     * datos del reintegro del banco para el ticket y la NC fiscal.
+     * de descuento de la casa etiquetada con el nombre de la promo, y guarda en
+     * la orden los datos del reintegro del banco (ticket + NC fiscal).
+     *
+     * El round-trip al backend usa SOLO `promotion_pos_id` (Integer). El resto
+     * (nombre/%, base) se guarda como propiedades JS planas para el ticket.
      */
     async _applyPromotion(order, promo) {
         // 1) Sacar la línea de descuento de una promo previa.
         this._removePromotionLine(order);
-        order.promotion_id = false;
-        order.promo_bank_pct = 0;
-        order.promo_bank_amount = 0;
+        order.promotion_pos_id = 0;
+        order.promoName = false;
+        order.promoBankPct = 0;
+        order.promoBankBase = false;
 
         if (!promo) {
             return; // "Sin promoción": ya quedó limpia.
@@ -106,13 +110,10 @@ patch(ControlButtons.prototype, {
         }
 
         // 3) Datos del reintegro del banco (no descuenta: solo informa + NC).
-        order.promotion_id = promo;
-        order.promo_bank_pct = promo.bank_discount_pct || 0;
-        if (promo.bank_discount_pct) {
-            const bankBase =
-                promo.bank_base === "untaxed" ? order.priceExcl : order.priceIncl;
-            order.promo_bank_amount = (bankBase * promo.bank_discount_pct) / 100;
-        }
+        order.promotion_pos_id = promo.id;
+        order.promoName = promo.name;
+        order.promoBankPct = promo.bank_discount_pct || 0;
+        order.promoBankBase = promo.bank_base || "total_incl";
     },
 
     _removePromotionLine(order) {

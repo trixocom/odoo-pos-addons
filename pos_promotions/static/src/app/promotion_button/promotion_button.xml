@@ -15,7 +15,7 @@
                     t-att-class="buttonClass"
                     t-on-click="() => this.clickPromotion()">
                 <i class="fa fa-tags me-1" role="img" aria-label="Promoción" title="Promoción"/>
-                <t t-if="currentOrder?.promotion_id" t-esc="currentOrder.promotion_id.name"/>
+                <t t-if="currentOrder?.promoName" t-esc="currentOrder.promoName"/>
                 <t t-else="">Promo</t>
             </button>
         </xpath>
