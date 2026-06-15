@@ -41,14 +41,11 @@ class PosOrder(models.Model):
         "bancaria de la promoción.",
     )
 
-    @api.model
-    def _load_pos_data_fields(self, config):
-        # Solo un Integer escalar viaja en el payload del POS. NO agregar campos
-        # relacionales (m2o) ni Monetary acá: rompen el setup del modelo de la
-        # orden en el frontend OWL (deja la o2m `lines` sin inicializar y
-        # crashea `_computeAllPrices`). El resto (promotion_id, importes) se
-        # resuelve/guarda en el backend.
-        return super()._load_pos_data_fields(config) + ["promotion_pos_id"]
+    # NO override de _load_pos_data_fields en pos.order: el default del mixin
+    # devuelve [] y `read([])` carga TODOS los campos. `promotion_pos_id` es
+    # stored, así que ya viaja al POS solo. Si lo overrideábamos devolviendo una
+    # lista, el POS cargaba SOLO esos campos y se perdían `lines`/`partner_id`/...
+    # → `this.lines` undefined → crash en `_computeAllPrices`.
 
     def _process_order(self, order, existing_order):
         order_id = super()._process_order(order, existing_order)
