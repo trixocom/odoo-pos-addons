@@ -139,9 +139,12 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
 
         // Coeficiente 1.0 (sin recargo): no agregamos línea, sólo cerramos.
         if (!diffAmount) {
-            this.props.line.cardPlanName = inst.name;
-            this.props.line.cardBankDiscount = inst.bank_discount || 0;
-            this.props.line.cardInstallmentCount = inst.divisor || 1;
+            // OJO: en Odoo 19 no se pueden asignar propiedades "sueltas" a un
+            // record del POS: related_models lanza "The field 'X' does not exist
+            // in model 'Y'" y deja el POS en blanco. Guardamos el id del plan en
+            // un campo REAL de pos.payment (card_installment_pos_id) y el resto
+            // (nombre, reintegro, cuotas) se resuelve desde el modelo cargado.
+            this.props.line.card_installment_pos_id = inst.id;
             return this.execButton(this.props.confirm);
         }
 
@@ -158,13 +161,18 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
         }
 
         const priceUnit = this._priceUnitFromInclTotal(diffAmount, product);
+        // OJO: en Odoo 19 el `note` de la orderline es un ARRAY JSON — al
+        // renderizar se hace JSON.parse(line.note) (orderline.js →
+        // `internalNote`). Pasarle texto plano tira SyntaxError en el render de
+        // OWL y deja el POS en blanco.
+        const note = JSON.stringify([{ text: inst.name, colorIndex: 0 }]);
         const newLine = await this.props.pos.addLineToCurrentOrder(
             {
                 product_tmpl_id: product.product_tmpl_id || product,
                 product_id: product,
                 qty: 1,
                 price_unit: priceUnit,
-                note: inst.name,
+                note: note,
             },
             {},
             false
@@ -175,9 +183,7 @@ export class FinancialSurchargePopup extends ConfirmationDialog {
         const lineIncl =
             (newLine && (newLine.priceIncl || newLine.price_subtotal_incl)) || diffAmount;
         this.props.line.amount = this.state.rawAmount + lineIncl;
-        this.props.line.cardPlanName = inst.name;
-        this.props.line.cardBankDiscount = inst.bank_discount || 0;
-        this.props.line.cardInstallmentCount = inst.divisor || 1;
+        this.props.line.card_installment_pos_id = inst.id;
         return this.execButton(this.props.confirm);
     }
 
