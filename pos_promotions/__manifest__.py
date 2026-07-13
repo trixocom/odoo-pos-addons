@@ -1,6 +1,6 @@
 {
     "name": "POS Promociones (descuento casa + reintegro banco)",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "category": "Sales/Point of Sale",
     "sequence": 7,
     "summary": "Promociones en POS: descuento de la casa + reintegro del banco "

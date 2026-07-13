@@ -111,15 +111,17 @@ class PosOrder(models.Model):
             return False
         if invoice.company_id.country_id.code != "AR":
             return False
-        # La factura origen DEBE tener CAE: sin él AFIP rechaza la NC (no hay
-        # comprobante asociado válido). Ver l10n_ar_edi._l10n_ar_get_cbtes_asoc.
+        # NO exigimos CAE en la factura origen. En modo electrónico (AFIP), el
+        # `action_post()` de la NC pide el CAE solo y adjunta el CbtesAsoc a la
+        # factura via `reversed_entry_id`. En modo no-AFIP (diario simple), la NC
+        # se postea sin CAE. En ambos casos la NC DEBE emitirse: es el
+        # contra-comprobante que evita pagar el IVA de lo que devuelve el banco.
         if not invoice.l10n_ar_afip_auth_code:
-            _logger.warning(
-                "[pos_promotions] Factura %s sin CAE: no se emite NC de "
-                "devolución bancaria.",
+            _logger.info(
+                "[pos_promotions] Factura %s sin CAE (modo no electrónico): se "
+                "emite igual la NC de devolución bancaria, sin CAE.",
                 invoice.name,
             )
-            return False
         if self.promo_bank_nc_id:
             # Idempotencia: ya se emitió.
             return self.promo_bank_nc_id
