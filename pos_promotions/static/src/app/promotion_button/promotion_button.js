@@ -5,17 +5,15 @@ import { ControlButtons } from "@point_of_sale/app/screens/product_screen/contro
 import { SelectionPopup } from "@point_of_sale/app/components/popups/selection_popup/selection_popup";
 import { makeAwaitable } from "@point_of_sale/app/utils/make_awaitable_dialog";
 import { AlertDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
-import { priceUnitFromInclTotal } from "@pos_promotions/app/promo_tax_utils";
 
 patch(ControlButtons.prototype, {
     /**
      * Promo aplicada a la orden actual, resuelta desde el campo real
-     * `promotion_pos_id` (Integer) contra el modelo `pos.promotion` cargado.
+     * `promotion_pos_id` contra el modelo `pos.promotion` cargado.
      *
      * IMPORTANTE: no guardar propiedades "sueltas" en el record de la orden ni
-     * de la línea. El framework de modelos del POS (related_models) lanza
-     * "The field 'X' does not exist in model 'Y'" al asignar algo que no es un
-     * campo del modelo, y eso rompe todo el POS.
+     * de la línea. related_models lanza "The field 'X' does not exist in model
+     * 'Y'" al asignar algo que no es un campo, y eso rompe el POS entero.
      */
     get currentPromo() {
         const id = this.currentOrder?.promotion_pos_id;
@@ -41,12 +39,7 @@ patch(ControlButtons.prototype, {
 
         const currentId = order.promotion_pos_id || 0;
         const selectionList = [
-            {
-                id: 0,
-                label: _t("Sin promoción"),
-                isSelected: !currentId,
-                item: false,
-            },
+            { id: 0, label: _t("Sin promoción"), isSelected: !currentId, item: false },
             ...promotions.map((p) => ({
                 id: p.id,
                 label: `${p.name} — casa ${p.house_discount_pct}% / banco ${p.bank_discount_pct}%`,
@@ -59,58 +52,75 @@ patch(ControlButtons.prototype, {
             title: _t("Elegí una promoción"),
             list: selectionList,
         });
-        // `undefined` = el cajero canceló el popup; no tocamos nada.
         if (promo === undefined) {
-            return;
+            return; // el cajero canceló
         }
         await this._applyPromotion(order, promo);
     },
 
     /**
-     * Quita la promo anterior (si había) y aplica la nueva: una línea negativa
-     * de descuento de la casa etiquetada con el nombre de la promo.
+     * Quita la promo anterior y aplica la nueva: una línea negativa de descuento
+     * de la casa etiquetada con el nombre de la promo. Lo único que se guarda en
+     * la orden es `promotion_pos_id` (campo real, viaja al backend y dispara la
+     * NC de la devolución bancaria).
      *
-     * Lo único que se guarda en la orden es `promotion_pos_id` (campo real, que
-     * viaja al backend y dispara la NC de la devolución bancaria).
+     * Todo va dentro de un try/catch: si algo falla, mostramos el error en un
+     * diálogo en vez de dejar el POS en blanco.
      */
     async _applyPromotion(order, promo) {
-        this._removePromotionLine(order);
-        order.promotion_pos_id = 0;
+        try {
+            this._removePromotionLine(order);
+            order.promotion_pos_id = 0;
 
-        if (!promo) {
-            return; // "Sin promoción": queda limpia.
-        }
-
-        if (promo.house_discount_pct) {
-            const product = this.pos.company.pos_promo_discount_product_id;
-            if (!product) {
-                this.dialog.add(AlertDialog, {
-                    title: _t("Falta configuración"),
-                    body: _t(
-                        "No hay 'Producto para descuento de promoción' configurado en " +
-                            "Punto de Venta → Configuración → Ajustes."
-                    ),
-                });
-                return;
+            if (!promo) {
+                return; // "Sin promoción"
             }
-            const houseAmount = (order.priceIncl * promo.house_discount_pct) / 100;
-            if (houseAmount > 0) {
-                const priceUnit = priceUnitFromInclTotal(this.pos, -houseAmount, product);
-                await this.pos.addLineToCurrentOrder(
-                    {
-                        product_tmpl_id: product.product_tmpl_id || product,
-                        product_id: product,
-                        qty: 1,
-                        price_unit: priceUnit,
-                        note: promo.name,
-                    },
-                    {},
-                    false
-                );
-            }
-        }
 
-        order.promotion_pos_id = promo.id;
+            if (promo.house_discount_pct) {
+                const product = this.pos.company.pos_promo_discount_product_id;
+                if (!product) {
+                    this.dialog.add(AlertDialog, {
+                        title: _t("Falta configuración"),
+                        body: _t(
+                            "No hay 'Producto para descuento de promoción' configurado " +
+                                "en Punto de Venta → Configuración → Ajustes."
+                        ),
+                    });
+                    return;
+                }
+                const houseAmount = (order.priceIncl * promo.house_discount_pct) / 100;
+                if (houseAmount > 0) {
+                    // price_unit (neto) tal que el total CON impuestos de la línea
+                    // sea -houseAmount. Sumamos las alícuotas de los impuestos del
+                    // producto que NO están incluidos en el precio.
+                    const taxes = (product.taxes_id || []).filter(
+                        (t) => !t.price_include && t.amount_type === "percent"
+                    );
+                    const rate =
+                        taxes.reduce((sum, t) => sum + (t.amount || 0), 0) / 100;
+                    const priceUnit = -houseAmount / (1 + rate);
+
+                    await this.pos.addLineToCurrentOrder(
+                        {
+                            product_tmpl_id: product.product_tmpl_id,
+                            product_id: product,
+                            qty: 1,
+                            price_unit: priceUnit,
+                            note: promo.name,
+                        },
+                        {},
+                        false
+                    );
+                }
+            }
+
+            order.promotion_pos_id = promo.id;
+        } catch (error) {
+            this.dialog.add(AlertDialog, {
+                title: _t("Error aplicando la promoción"),
+                body: String((error && (error.message || error.name)) || error),
+            });
+        }
     },
 
     /**
