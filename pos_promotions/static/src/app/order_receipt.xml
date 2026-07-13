@@ -7,30 +7,26 @@
         - El reintegro del banco (importe y %). Es SOLO informativo: la venta
           se cobró por el total; el reintegro lo devuelve el banco al cliente.
 
-        Los datos vienen de propiedades JS planas seteadas en el botón Promo
-        (order.promoName / promoBankPct / promoBankBase). El importe se calcula
-        sobre el total real de la orden según la base configurada en la promo.
+        `promo` y `promoBankAmount` son getters agregados en order_receipt.js,
+        que resuelven la promo desde el campo `promotion_pos_id` de la orden.
     -->
     <t t-name="pos_promotions.OrderReceiptPromotion"
        t-inherit="point_of_sale.OrderReceipt"
        t-inherit-mode="extension">
         <xpath expr="//div[hasclass('paymentlines')]" position="after">
-            <t t-if="order.promoName">
+            <t t-if="promo">
                 <div class="pos-receipt-promotion text-start mt-1" style="font-size: 90%;">
                     <span>
                         <i class="fa fa-tags me-1"/>
                         <strong>Promo: </strong>
-                        <t t-esc="order.promoName"/>
+                        <t t-esc="promo.name"/>
                     </span>
                 </div>
-                <t t-if="order.promoBankPct">
-                    <t t-set="bankBase"
-                       t-value="order.promoBankBase === 'untaxed' ? order.priceExcl : order.priceIncl"/>
-                    <t t-set="reintegro" t-value="bankBase * order.promoBankPct / 100"/>
+                <t t-if="promo.bank_discount_pct">
                     <div class="pos-receipt-promotion-bank text-start" style="font-size: 90%;">
                         <span>
-                            Reintegro banco (<t t-esc="order.promoBankPct"/>%):
-                            <t t-esc="formatCurrency(reintegro)"/>
+                            Reintegro banco (<t t-esc="promo.bank_discount_pct"/>%):
+                            <t t-esc="formatCurrency(promoBankAmount)"/>
                         </span>
                     </div>
                     <div class="pos-receipt-promotion-note text-start text-muted"

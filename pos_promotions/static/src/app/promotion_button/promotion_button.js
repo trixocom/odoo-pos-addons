@@ -9,8 +9,22 @@ import { priceUnitFromInclTotal } from "@pos_promotions/app/promo_tax_utils";
 
 patch(ControlButtons.prototype, {
     /**
-     * Abre el selector de promociones y aplica la elegida sobre la orden.
+     * Promo aplicada a la orden actual, resuelta desde el campo real
+     * `promotion_pos_id` (Integer) contra el modelo `pos.promotion` cargado.
+     *
+     * IMPORTANTE: no guardar propiedades "sueltas" en el record de la orden ni
+     * de la línea. El framework de modelos del POS (related_models) lanza
+     * "The field 'X' does not exist in model 'Y'" al asignar algo que no es un
+     * campo del modelo, y eso rompe todo el POS.
      */
+    get currentPromo() {
+        const id = this.currentOrder?.promotion_pos_id;
+        if (!id) {
+            return null;
+        }
+        return this.pos.models["pos.promotion"].get(id) || null;
+    },
+
     async clickPromotion() {
         const order = this.pos.getOrder();
         const promotions = this.pos.models["pos.promotion"].getAll();
@@ -35,11 +49,7 @@ patch(ControlButtons.prototype, {
             },
             ...promotions.map((p) => ({
                 id: p.id,
-                label: _t("%(name)s — casa %(house)s%% / banco %(bank)s%%", {
-                    name: p.name,
-                    house: p.house_discount_pct,
-                    bank: p.bank_discount_pct,
-                }),
+                label: `${p.name} — casa ${p.house_discount_pct}% / banco ${p.bank_discount_pct}%`,
                 isSelected: currentId === p.id,
                 item: p,
             })),
@@ -58,25 +68,19 @@ patch(ControlButtons.prototype, {
 
     /**
      * Quita la promo anterior (si había) y aplica la nueva: una línea negativa
-     * de descuento de la casa etiquetada con el nombre de la promo, y guarda en
-     * la orden los datos del reintegro del banco (ticket + NC fiscal).
+     * de descuento de la casa etiquetada con el nombre de la promo.
      *
-     * El round-trip al backend usa SOLO `promotion_pos_id` (Integer). El resto
-     * (nombre/%, base) se guarda como propiedades JS planas para el ticket.
+     * Lo único que se guarda en la orden es `promotion_pos_id` (campo real, que
+     * viaja al backend y dispara la NC de la devolución bancaria).
      */
     async _applyPromotion(order, promo) {
-        // 1) Sacar la línea de descuento de una promo previa.
         this._removePromotionLine(order);
         order.promotion_pos_id = 0;
-        order.promoName = false;
-        order.promoBankPct = 0;
-        order.promoBankBase = false;
 
         if (!promo) {
-            return; // "Sin promoción": ya quedó limpia.
+            return; // "Sin promoción": queda limpia.
         }
 
-        // 2) Descuento de la casa como línea negativa única.
         if (promo.house_discount_pct) {
             const product = this.pos.company.pos_promo_discount_product_id;
             if (!product) {
@@ -92,7 +96,7 @@ patch(ControlButtons.prototype, {
             const houseAmount = (order.priceIncl * promo.house_discount_pct) / 100;
             if (houseAmount > 0) {
                 const priceUnit = priceUnitFromInclTotal(this.pos, -houseAmount, product);
-                const line = await this.pos.addLineToCurrentOrder(
+                await this.pos.addLineToCurrentOrder(
                     {
                         product_tmpl_id: product.product_tmpl_id || product,
                         product_id: product,
@@ -103,27 +107,23 @@ patch(ControlButtons.prototype, {
                     {},
                     false
                 );
-                if (line) {
-                    line.promo_discount_line = true;
-                }
             }
         }
 
-        // 3) Datos del reintegro del banco (no descuenta: solo informa + NC).
         order.promotion_pos_id = promo.id;
-        order.promoName = promo.name;
-        order.promoBankPct = promo.bank_discount_pct || 0;
-        order.promoBankBase = promo.bank_base || "total_incl";
     },
 
+    /**
+     * La línea de descuento se identifica por el producto de descuento de la
+     * compañía (no usamos flags sueltos en el record: el POS los rechaza).
+     */
     _removePromotionLine(order) {
         const product = this.pos.company.pos_promo_discount_product_id;
-        const lines = [...(order.lines || [])];
-        for (const line of lines) {
-            const isFlagged = line.promo_discount_line;
-            const isDiscountProduct =
-                product && line.product_id && line.product_id.id === product.id;
-            if (isFlagged || isDiscountProduct) {
+        if (!product) {
+            return;
+        }
+        for (const line of [...(order.lines || [])]) {
+            if (line.product_id && line.product_id.id === product.id) {
                 order.removeOrderline(line);
             }
         }
