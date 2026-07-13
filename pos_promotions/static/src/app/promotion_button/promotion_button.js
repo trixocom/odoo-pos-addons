@@ -100,13 +100,21 @@ patch(ControlButtons.prototype, {
                         taxes.reduce((sum, t) => sum + (t.amount || 0), 0) / 100;
                     const priceUnit = -houseAmount / (1 + rate);
 
+                    // OJO: en Odoo 19 `note` de la orderline es un ARRAY JSON
+                    // (se hace JSON.parse al renderizar: orderline.js →
+                    // `internalNote: JSON.parse(line.note || "[]")`). Pasarle
+                    // texto plano rompe el render y deja el POS en blanco.
+                    const note = JSON.stringify([
+                        { text: promo.name, colorIndex: 0 },
+                    ]);
+
                     await this.pos.addLineToCurrentOrder(
                         {
                             product_tmpl_id: product.product_tmpl_id,
                             product_id: product,
                             qty: 1,
                             price_unit: priceUnit,
-                            note: promo.name,
+                            note: note,
                         },
                         {},
                         false
