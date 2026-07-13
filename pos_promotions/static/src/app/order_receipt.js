@@ -1,29 +1,28 @@
 /** @odoo-module */
 import { patch } from "@web/core/utils/patch";
 import { OrderReceipt } from "@point_of_sale/app/screens/receipt_screen/receipt/order_receipt";
-import { usePos } from "@point_of_sale/app/hooks/pos_hook";
 
 /**
  * Getters para el ticket: resuelven la promo desde el campo real
  * `promotion_pos_id` de la orden contra el modelo `pos.promotion` cargado.
  *
- * No guardamos el nombre/% de la promo como propiedades sueltas en el record:
- * el framework de modelos del POS lanza excepción al asignar algo que no es un
- * campo del modelo. Al resolverlo desde el id, además funciona en la reimpresión
- * de un ticket ya guardado.
+ * Notas de implementación (dos trampas del POS de Odoo 19):
+ *  1. NO guardar propiedades sueltas en los records (order/line): el framework
+ *     de modelos lanza "The field 'X' does not exist in model 'Y'".
+ *  2. NO patchear `setup()` de OrderReceipt: el componente no define `setup`
+ *     propio, y el `super.setup()` del patch rompe el bundle entero (POS en
+ *     blanco). Por eso resolvemos el modelo con `record.models`, que ya expone
+ *     el registry (related_models: `get models()`), sin hooks.
  */
 patch(OrderReceipt.prototype, {
-    setup() {
-        super.setup();
-        this.posService = usePos();
-    },
-
     get promo() {
-        const id = this.order?.promotion_pos_id;
+        const order = this.order;
+        const id = order && order.promotion_pos_id;
         if (!id) {
             return null;
         }
-        return this.posService.models["pos.promotion"].get(id) || null;
+        const model = order.models && order.models["pos.promotion"];
+        return (model && model.get(id)) || null;
     },
 
     /** Importe que devuelve el banco, según la base configurada en la promo. */
