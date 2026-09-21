@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Análisis de ventas POS (report.pos.order) -->
+    <record id="view_report_pos_order_search_trx_root" model="ir.ui.view">
+        <field name="name">report.pos.order.search.trx.root</field>
+        <field name="model">report.pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_report_pos_order_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='pos']" position="before">
+                <filter string="Razón social (CUIT)" name="trx_root_company" context="{'group_by': 'trx_root_company_id'}"/>
+                <filter string="Local (compañía)" name="trx_company" context="{'group_by': 'company_id'}"/>
+            </xpath>
+            <xpath expr="//filter[@name='filter_date']" position="before">
+                <field name="trx_root_company_id"/>
+                <filter string="Mi razón social" name="trx_my_root" domain="[('trx_root_company_id', 'parent_of', allowed_company_ids[0])]"
+                        help="Solo la razón social de la compañía actual (y sus sucursales)"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Órdenes POS -->
+    <record id="view_pos_order_filter_trx_root" model="ir.ui.view">
+        <field name="name">pos.order.search.trx.root</field>
+        <field name="model">pos.order</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='config_id']" position="before">
+                <filter string="Razón social (CUIT)" name="trx_root_company" domain="[]" context="{'group_by': 'trx_root_company_id'}"/>
+                <filter string="Local (compañía)" name="trx_company" domain="[]" context="{'group_by': 'company_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Análisis de facturas (account.invoice.report) -->
+    <record id="view_account_invoice_report_search_trx_root" model="ir.ui.view">
+        <field name="name">account.invoice.report.search.trx.root</field>
+        <field name="model">account.invoice.report</field>
+        <field name="inherit_id" ref="account.view_account_invoice_report_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='company']" position="before">
+                <filter string="Razón social (CUIT)" name="trx_root_company" context="{'group_by': 'trx_root_company_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Facturas / asientos -->
+    <record id="view_account_invoice_filter_trx_root" model="ir.ui.view">
+        <field name="name">account.move.search.trx.root</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_account_invoice_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='salesperson']" position="before">
+                <filter string="Razón social (CUIT)" name="trx_root_company" context="{'group_by': 'trx_root_company_id'}"/>
+                <filter string="Local (compañía)" name="trx_company" context="{'group_by': 'company_id'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Stock (quants) -->
+    <record id="quant_search_view_trx_root" model="ir.ui.view">
+        <field name="name">stock.quant.search.trx.root</field>
+        <field name="model">stock.quant</field>
+        <field name="inherit_id" ref="stock.quant_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='company']" position="before">
+                <filter string="Razón social (CUIT)" name="trx_root_company" domain="[]" context="{'group_by': 'trx_root_company_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="rule_trx_mc_sales_report_company" model="ir.rule">
+        <field name="name">Ventas por razón social: multi-compañía</field>
+        <field name="model_id" ref="model_trx_mc_sales_report"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+</odoo>

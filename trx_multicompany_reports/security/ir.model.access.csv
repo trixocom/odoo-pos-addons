@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_trx_mc_sales_report_pos_user,trx.mc.sales.report pos user,model_trx_mc_sales_report,point_of_sale.group_pos_user,1,0,0,0
+access_trx_mc_sales_report_account,trx.mc.sales.report account readonly,model_trx_mc_sales_report,account.group_account_readonly,1,0,0,0
+access_trx_mc_sales_report_account_inv,trx.mc.sales.report account invoice,model_trx_mc_sales_report,account.group_account_invoice,1,0,0,0

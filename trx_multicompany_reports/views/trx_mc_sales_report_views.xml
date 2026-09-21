@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_mc_sales_report_pivot" model="ir.ui.view">
+        <field name="name">trx.mc.sales.report.pivot</field>
+        <field name="model">trx.mc.sales.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Ventas por razón social y local" sample="1" disable_linking="1">
+                <field name="trx_root_company_id" type="row"/>
+                <field name="company_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="price_total" type="measure"/>
+                <field name="qty" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_trx_mc_sales_report_graph" model="ir.ui.view">
+        <field name="name">trx.mc.sales.report.graph</field>
+        <field name="model">trx.mc.sales.report</field>
+        <field name="arch" type="xml">
+            <graph string="Ventas por razón social y local" type="bar" sample="1" stacked="1">
+                <field name="trx_root_company_id"/>
+                <field name="company_id"/>
+                <field name="price_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_trx_mc_sales_report_list" model="ir.ui.view">
+        <field name="name">trx.mc.sales.report.list</field>
+        <field name="model">trx.mc.sales.report</field>
+        <field name="arch" type="xml">
+            <list string="Ventas por razón social y local" create="0" edit="0" delete="0">
+                <field name="date"/>
+                <field name="trx_root_company_id"/>
+                <field name="company_id"/>
+                <field name="config_id" optional="show"/>
+                <field name="source" optional="show"/>
+                <field name="ref"/>
+                <field name="partner_id" optional="hide"/>
+                <field name="product_id"/>
+                <field name="product_categ_id" optional="show"/>
+                <field name="qty" sum="Cantidad"/>
+                <field name="price_subtotal" sum="Neto" optional="show"/>
+                <field name="price_total" sum="Total"/>
+                <field name="total_cost" sum="Costo" optional="hide" groups="point_of_sale.group_pos_manager"/>
+                <field name="margin" sum="Margen" optional="hide" groups="point_of_sale.group_pos_manager"/>
+                <field name="invoiced" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_mc_sales_report_search" model="ir.ui.view">
+        <field name="name">trx.mc.sales.report.search</field>
+        <field name="model">trx.mc.sales.report</field>
+        <field name="arch" type="xml">
+            <search string="Ventas por razón social y local">
+                <field name="trx_root_company_id"/>
+                <field name="company_id"/>
+                <field name="config_id"/>
+                <field name="product_id"/>
+                <field name="product_categ_id"/>
+                <field name="partner_id"/>
+                <field name="ref"/>
+                <filter string="Ventas POS" name="pos" domain="[('source', '=', 'pos')]"/>
+                <filter string="Facturas / NC (no POS)" name="invoice" domain="[('source', '=', 'invoice')]"/>
+                <separator/>
+                <filter string="Mi razón social" name="my_root" domain="[('trx_root_company_id', 'parent_of', allowed_company_ids[0])]"
+                        help="Solo la razón social de la compañía actual (y sus sucursales)"/>
+                <separator/>
+                <filter string="Fecha" name="filter_date" date="date" default_period="month"/>
+                <group name="groupby">
+                    <filter string="Razón social (CUIT)" name="group_root" context="{'group_by': 'trx_root_company_id'}"/>
+                    <filter string="Local (compañía)" name="group_company" context="{'group_by': 'company_id'}"/>
+                    <filter string="Punto de venta" name="group_config" context="{'group_by': 'config_id'}"/>
+                    <filter string="Categoría de producto" name="group_categ" context="{'group_by': 'product_categ_id'}"/>
+                    <filter string="Producto" name="group_product" context="{'group_by': 'product_id'}"/>
+                    <filter string="Origen" name="group_source" context="{'group_by': 'source'}"/>
+                    <filter string="Día" name="group_day" context="{'group_by': 'date:day'}"/>
+                    <filter string="Mes" name="group_month" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_trx_mc_sales_report" model="ir.actions.act_window">
+        <field name="name">Ventas por razón social y local</field>
+        <field name="res_model">trx.mc.sales.report</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_trx_mc_sales_report_search"/>
+        <field name="context">{'search_default_filter_date': 1, 'search_default_group_root': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_empty_folder">Sin ventas en el período</p>
+            <p>Ventas POS confirmadas y facturas/NC de clientes que no vienen del POS, agrupadas por razón social (CUIT) y local. Seleccioná todas las compañías en el selector para ver la red completa.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_trx_mc_sales_report" name="Ventas por razón social" action="action_trx_mc_sales_report"
+              parent="point_of_sale.menu_point_rep" sequence="10"/>
+</odoo>
