@@ -99,7 +99,8 @@
                 <field name="company_id"/>
                 <filter name="done" string="Realizados" domain="[('state', '=', 'done')]"/>
                 <filter name="draft" string="Preparados" domain="[('state', '=', 'draft')]"/>
-                <filter name="cross" string="Entre compañías distintas" domain="[('same_company', '=', False)]"/>
+                <filter name="cross" string="Entre CUIT distintos" domain="[('same_company', '=', False)]"/>
+                <filter name="intra" string="Mismo CUIT (entre locales)" domain="[('same_company', '=', True)]"/>
                 <filter name="this_month" string="Fecha" date="date"/>
                 <group>
                     <filter name="group_origin_company" string="Compañía que vendió" domain="[]" context="{'group_by': 'origin_company_id'}"/>

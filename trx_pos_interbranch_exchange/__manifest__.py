@@ -1,6 +1,6 @@
 {
     "name": "POS - Cambio inter-sucursal (multi-compañía)",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.1.0",
     "category": "Sales/Point of Sale",
     "sequence": 8,
     "summary": "Cambio de productos en cualquier sucursal de la red aunque la venta "
@@ -30,6 +30,10 @@ Flujo en el POS de la sucursal que toma el cambio (compañía B):
    * Ingreso del producto devuelto al depósito de B (devolución de cliente).
    * En B el pago se contabiliza al cierre de sesión en la misma cuenta
      corriente (B tiene a cobrar de A).
+   Si A y B son locales de la MISMA razón social (compañías con parent_id /
+   sucursales de Odoo), la cuenta corriente queda en cero a nivel razón
+   social y solo refleja el traspaso entre locales; la configuración
+   (cuentas, diarios, plazo) es por razón social y se hereda de la raíz.
 5. Todo lo que ocurre en A lo ejecuta el servidor con un usuario técnico: el
    cajero de B solo necesita el grupo "POS: cambio inter-sucursal", nunca
    acceso a la contabilidad de A. Cada cambio queda registrado (quién, cuándo,

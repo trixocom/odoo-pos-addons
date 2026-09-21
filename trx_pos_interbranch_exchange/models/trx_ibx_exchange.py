@@ -39,7 +39,15 @@ class TrxIbxExchange(models.Model):
     origin_order_id = fields.Many2one("pos.order", string="Venta original (A)", required=True)
     origin_move_id = fields.Many2one("account.move", string="Factura original (A)")
     origin_is_fiscal = fields.Boolean(string="Venta original fiscal")
-    same_company = fields.Boolean(compute="_compute_same_company", store=True)
+    same_company = fields.Boolean(
+        string="Misma razón social (CUIT)",
+        compute="_compute_same_company",
+        store=True,
+        help="Verdadero si la compañía que vendió y la que recibe pertenecen a la misma "
+        "razón social (misma compañía raíz: la venta fue en la misma compañía o en otra "
+        "sucursal del mismo CUIT). En ese caso la cuenta corriente inter-sucursal queda "
+        "en cero a nivel razón social: solo refleja el traspaso entre locales.",
+    )
     # Documentos generados
     refund_move_id = fields.Many2one("account.move", string="Nota de crédito (A)")
     settlement_move_id = fields.Many2one("account.move", string="Asiento de compensación (A)")
@@ -55,7 +63,7 @@ class TrxIbxExchange(models.Model):
     @api.depends("company_id", "origin_company_id")
     def _compute_same_company(self):
         for rec in self:
-            rec.same_company = rec.company_id == rec.origin_company_id
+            rec.same_company = rec.company_id.root_id == rec.origin_company_id.root_id
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -176,7 +184,9 @@ class TrxIbxExchange(models.Model):
                 "config_name": order.config_id.name,
                 "is_fiscal": bool(invoice),
                 "invoice_name": invoice.name if invoice else "",
-                "same_company": order.company_id == company,
+                # Mismo CUIT: misma compañía u otra sucursal de la misma razón social
+                "same_company": order.company_id.root_id == company.root_id,
+                "same_branch": order.company_id == company,
                 "partner_name": order.partner_id.name or "",
             },
             "lines": lines,
@@ -416,7 +426,7 @@ class TrxIbxExchange(models.Model):
 
     def _ibx_create_settlement(self, company_a, company_b, refund):
         """Reembolso de la NC en A como account.payment saliente en el diario
-        IBXB (cuenta de pago = cta cte inter-sucursal). Deja al cliente en cero
+        IBXP (cuenta de pago = cta cte inter-sucursal). Deja al cliente en cero
         en A, la NC en estado "pagada", y el importe acreditado en la cta cte:
         A le debe ese importe a B (que es quien le dio el producto al cliente)."""
         recv_lines = refund.line_ids.filtered(lambda l: l.account_id.account_type == "asset_receivable")
@@ -425,10 +435,13 @@ class TrxIbxExchange(models.Model):
         amount = abs(sum(recv_lines.mapped("balance")))
         if float_is_zero(amount, precision_rounding=company_a.currency_id.rounding):
             raise UserError(_("La NC %s tiene importe cero.", refund.name))
-        journal = company_a.trx_ibx_bank_journal_id
+        # Diario propio para el reembolso (IBXP): si compartiera el diario del medio
+        # de pago POS (IBXB), los asientos de cierre de sesión y los pagos competirían
+        # por la misma numeración (con talonarios de recibo ADHOC colisiona).
+        journal = company_a.trx_ibx_payment_journal_id or company_a.trx_ibx_bank_journal_id
         method_line = journal.outbound_payment_method_line_ids[:1]
         if not journal or not method_line:
-            raise UserError(_("La compañía %s no tiene el diario de cobros inter-sucursal configurado.", company_a.name))
+            raise UserError(_("La compañía %s no tiene el diario de reembolsos inter-sucursal configurado.", company_a.name))
         if method_line.payment_account_id != company_a.trx_ibx_account_id:
             method_line.payment_account_id = company_a.trx_ibx_account_id
         label = _("Cambio inter-sucursal %s - NC %s - recibido en %s", self.name, refund.name, company_b.name)

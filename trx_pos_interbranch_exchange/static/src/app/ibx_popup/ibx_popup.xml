@@ -22,7 +22,8 @@
                             — <t t-esc="state.result.order.date_order"/></div>
                         <div><strong>Vendida por:</strong> <t t-esc="state.result.order.company_name"/>
                             (<t t-esc="state.result.order.config_name"/>)
-                            <span t-if="!state.result.order.same_company" class="badge text-bg-warning ms-1">otra compañía</span>
+                            <span t-if="!state.result.order.same_company" class="badge text-bg-warning ms-1">otro CUIT</span>
+                            <span t-elif="!state.result.order.same_branch" class="badge text-bg-info ms-1">otra sucursal, mismo CUIT</span>
                         </div>
                         <div>
                             <strong>Comprobante:</strong>
