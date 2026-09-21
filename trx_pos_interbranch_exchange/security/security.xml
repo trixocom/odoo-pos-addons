@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_ibx_user" model="res.groups">
+        <field name="name">POS: cambio inter-sucursal</field>
+        <field name="category_id" ref="base.module_category_sales_point_of_sale"/>
+        <field name="comment">Puede tomar cambios de productos vendidos en otra sucursal/compañía desde el POS. No otorga acceso a la contabilidad de las otras compañías: la NC y la compensación las ejecuta el servidor.</field>
+    </record>
+
+    <!-- El gerente de POS y el gerente contable siempre pueden -->
+    <record id="point_of_sale.group_pos_manager" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_ibx_user'))]"/>
+    </record>
+
+    <data noupdate="1">
+        <record id="rule_ibx_exchange_multi_company" model="ir.rule">
+            <field name="name">Cambio inter-sucursal: compañía que recibe o que vendió</field>
+            <field name="model_id" ref="model_trx_ibx_exchange"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', 'in', company_ids), ('origin_company_id', 'in', company_ids)]</field>
+        </record>
+        <record id="rule_ibx_exchange_line_multi_company" model="ir.rule">
+            <field name="name">Línea de cambio inter-sucursal: compañía que recibe o que vendió</field>
+            <field name="model_id" ref="model_trx_ibx_exchange_line"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('exchange_id.company_id', 'in', company_ids), ('exchange_id.origin_company_id', 'in', company_ids)]</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_payment_method_form_ibx" model="ir.ui.view">
+        <field name="name">pos.payment.method.form.ibx</field>
+        <field name="model">pos.payment.method</field>
+        <field name="inherit_id" ref="point_of_sale.pos_payment_method_view_form"/>
+        <field name="arch" type="xml">
+            <field name="company_id" position="after">
+                <div colspan="2" class="alert alert-info" role="alert" invisible="use_payment_terminal != 'interbranch_exchange'">
+                    Medio de pago para cambios inter-sucursal. El importe se contabiliza en la cuenta pendiente (outstanding) configurada, que debe ser la cuenta corriente "Cambios inter-sucursal" de la compañía. Se crea automáticamente desde Ajustes de Punto de Venta.
+                </div>
+            </field>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_ticket_cambio" model="report.paperformat">
+        <field name="name">Ticket de cambio 80mm</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_height">150</field>
+        <field name="page_width">80</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">3</field>
+        <field name="margin_bottom">3</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_spacing">0</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <template id="report_ticket_cambio_document">
+        <t t-call="web.basic_layout">
+            <div class="page" style="font-family: monospace; font-size: 11px;">
+                <t t-foreach="docs" t-as="o">
+                    <div style="text-align:center;">
+                        <strong t-esc="o.company_id.name"/><br/>
+                        <span t-if="o.company_id.vat">CUIT <t t-esc="o.company_id.vat"/></span><br/>
+                        <span t-esc="o.config_id.name"/>
+                    </div>
+                    <div style="text-align:center; margin:6px 0; font-size:13px;"><strong>TICKET DE CAMBIO</strong></div>
+                    <div>Venta: <t t-esc="o.pos_reference or o.name"/></div>
+                    <div>Fecha: <t t-esc="o.date_order" t-options="{'widget': 'datetime', 'format': 'dd/MM/yyyy HH:mm'}"/></div>
+                    <div t-if="o.account_move">Comprobante: <t t-esc="o.account_move.name"/></div>
+                    <table style="width:100%; margin-top:6px; border-top:1px dashed #000; border-bottom:1px dashed #000;">
+                        <t t-foreach="o._trx_ibx_ticket_lines()" t-as="l">
+                            <tr>
+                                <td style="text-align:left;"><t t-esc="l.full_product_name or l.product_id.display_name"/></td>
+                                <td style="text-align:right; white-space:nowrap;">x <t t-esc="'%g' % l.qty"/></td>
+                            </tr>
+                        </t>
+                    </table>
+                    <div style="text-align:center; margin-top:8px;">
+                        <img t-att-src="'/report/barcode/?barcode_type=Code128&amp;value=%s&amp;width=400&amp;height=70&amp;humanreadable=0' % o.uuid" style="width:100%; max-height:70px;"/>
+                        <div style="font-size:9px; word-break:break-all;"><t t-esc="o.uuid"/></div>
+                    </div>
+                    <div style="text-align:center; margin-top:8px; font-size:10px;">
+                        Cambios dentro de <t t-esc="o.company_id.trx_ibx_days_limit or 30"/> días presentando este ticket,
+                        en cualquier sucursal de la red. Sin valor fiscal.
+                    </div>
+                    <p style="page-break-after: always;"/>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <record id="action_report_ticket_cambio" model="ir.actions.report">
+        <field name="name">Ticket de cambio</field>
+        <field name="model">pos.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">trx_pos_interbranch_exchange.report_ticket_cambio_document</field>
+        <field name="report_file">trx_pos_interbranch_exchange.report_ticket_cambio_document</field>
+        <field name="paperformat_id" ref="paperformat_ticket_cambio"/>
+        <field name="binding_model_id" ref="point_of_sale.model_pos_order"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

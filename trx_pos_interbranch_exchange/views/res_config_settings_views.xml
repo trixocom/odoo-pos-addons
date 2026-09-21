@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_ibx" model="ir.ui.view">
+        <field name="name">res.config.settings.form.ibx</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='pos_payment_section']" position="inside">
+                <setting id="trx_ibx_setting" string="Cambio inter-sucursal"
+                         title="Cambios de productos vendidos en otra sucursal (aun de otra compañía). La NC se emite en la compañía que vendió y la mercadería ingresa en la que recibe; la diferencia queda en una cuenta corriente entre compañías.">
+                    <div class="content-group">
+                        <div class="row mt16">
+                            <label string="Plazo máximo (días)" for="trx_ibx_days_limit" class="col-lg-5 o_light_label"/>
+                            <field name="trx_ibx_days_limit"/>
+                        </div>
+                        <div class="row">
+                            <label string="Devolver diferencia en efectivo" for="trx_ibx_allow_cash_difference" class="col-lg-5 o_light_label"/>
+                            <field name="trx_ibx_allow_cash_difference"/>
+                        </div>
+                        <div class="row">
+                            <label string="Diario NC ventas NF" for="trx_ibx_nf_journal_id" class="col-lg-5 o_light_label"/>
+                            <field name="trx_ibx_nf_journal_id"/>
+                        </div>
+                        <div class="row">
+                            <label string="Cuenta corriente" for="trx_ibx_account_id" class="col-lg-5 o_light_label"/>
+                            <field name="trx_ibx_account_id" readonly="1"/>
+                        </div>
+                        <div class="row">
+                            <label string="Medio de pago" for="trx_ibx_payment_method_id" class="col-lg-5 o_light_label"/>
+                            <field name="trx_ibx_payment_method_id" readonly="1"/>
+                        </div>
+                        <div class="mt8">
+                            <button name="action_trx_ibx_setup" type="object" string="Crear cuentas, diarios y medio de pago" class="btn-link" icon="oi-arrow-right"/>
+                        </div>
+                        <div class="text-muted">
+                            Idempotente: crea lo que falte para esta compañía y agrega el medio de pago a todos sus POS. Repetir por cada compañía (CUIT).
+                        </div>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

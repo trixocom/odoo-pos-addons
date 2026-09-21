@@ -1,0 +1,72 @@
+# trx_pos_interbranch_exchange — Cambio inter-sucursal (multi-compañía)
+
+Odoo 19 Community. Autor: Trixocom.
+
+Permite tomar en cualquier sucursal el cambio de un producto vendido en otra
+sucursal, aunque la venta original sea de **otra compañía (CUIT)**.
+
+## Flujo
+1. En el POS que recibe (compañía **B**), el cajero elige el medio de pago
+   **Cambio inter-sucursal** y escanea/tipea el código del ticket de cambio
+   (uuid del `pos.order`, número de recibo `00001-001-0001` o número de orden).
+2. El servidor busca la venta original en todas las compañías y evalúa cada
+   línea: categoría con el tilde *Acepta cambios inter-sucursal* (u override
+   por producto), plazo en días de la compañía que recibe, cantidad ya
+   devuelta/cambiada.
+3. El cajero elige productos y cantidades. El importe (PVP con IVA de la venta
+   original) queda como pago de la venta nueva. Regla por defecto: la compra
+   nueva debe ser de igual o mayor valor (configurable: devolver diferencia en
+   efectivo).
+4. Al confirmar la venta nueva, **en la misma transacción** el servidor:
+   - emite la **NC en la compañía A** (fiscal con CAE y comprobante asociado
+     vía `account.move.reversal` si la venta fue facturada; NC interna en un
+     diario de ventas sin documentos si fue NF);
+   - asienta en A la **compensación**: Dr Deudores (cliente) / Cr *Cuenta
+     corriente cambios inter-sucursal* (partner = compañía B) y la concilia con
+     la NC → el cliente queda en cero en A y **A le debe a B** el importe;
+   - ingresa la mercadería al **depósito de B** (devolución de cliente, al
+     costo de B);
+   - en B, el pago se contabiliza al cierre de sesión en la misma cuenta
+     corriente (cuenta *outstanding* del medio de pago) → **B tiene a cobrar de A**.
+5. El cajero solo necesita el grupo **POS: cambio inter-sucursal**. Lo de A lo
+   ejecuta el servidor (`sudo` + `with_company`). Todo queda en
+   *Punto de Venta → Cambios inter-sucursal* (lista, formulario, pivot).
+
+## Contabilidad (resumen)
+| Compañía | Documento | Débito | Crédito |
+|---|---|---|---|
+| A (vendió) | NC (fiscal o NF) | Ventas / IVA | Deudores (cliente) |
+| A | Asiento compensación (diario IBXA) | Deudores (cliente) | Cta cte inter-sucursal (partner B) |
+| B (recibe) | Cierre de sesión POS | Cta cte inter-sucursal (outstanding) | Deudores POS |
+| B | Ingreso de stock | (valoración: stock +costo) | — |
+
+Saldo neto: A acreedora / B deudora por el PVP del cambio. La mercadería queda
+en B sin contrapartida contable automática; el pivot informa PVP y costo por
+par de compañías para la **compensación periódica** que defina el estudio
+contable (factura/NC entre CUIT o compensación de saldos). Esa compensación
+NO la hace el módulo (v1).
+
+## Configuración
+Por cada compañía: *Punto de Venta → Ajustes → Cambio inter-sucursal → Crear
+cuentas, diarios y medio de pago*. Crea (idempotente):
+- cuenta `1.1.3.99.001` *Cambios inter-sucursal - cuenta corriente* (activo
+  corriente, conciliable) y `1.1.1.99.001` transitoria (caja/banco, exigida por
+  el diario tipo banco);
+- diarios `IBXA` (varios, ajustes) e `IBXB` (banco, cobros);
+- medio de pago *Cambio inter-sucursal* (terminal `interbranch_exchange`,
+  outstanding = cta cte, split por transacción) y lo agrega a todos los POS.
+
+Además: plazo máximo en días, diario para NC de ventas NF (si el diario del
+POS usa documentos), y el tilde en las categorías de producto.
+
+## Ticket de cambio
+Reporte PDF 80mm sobre `pos.order` (botón *Ticket de cambio* y menú Imprimir):
+sin precios, con código de barras Code128 del uuid.
+
+## Supuestos v1 (a validar con el cliente)
+- Solo productos almacenables. Cantidad disponible = vendida − devuelta − ya cambiada.
+- El PVP del cambio es el de la venta original (con IVA), no el actual.
+- La compra nueva debe ser ≥ al cambio (sin vuelto), salvo configuración.
+- Devoluciones en la misma compañía también pasan por acá (mismo circuito;
+  la cuenta corriente queda en cero por sí sola).
+- Los preparados que no se confirman en 12 h se cancelan (cron).

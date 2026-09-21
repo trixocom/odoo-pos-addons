@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_interbranch_exchange.IbxExchangePopup"
+       t-inherit="web.ConfirmationDialog" t-inherit-mode="primary">
+        <xpath expr="//p" position="replace">
+            <div class="ibx-popup">
+                <div class="input-group mb-2">
+                    <input type="text" class="form-control form-control-lg" t-ref="ibxCode"
+                           placeholder="Escaneá o tipeá el código del ticket de cambio"
+                           t-model="state.code" t-on-keydown="onCodeKeydown"
+                           t-att-disabled="state.loading"/>
+                    <button class="btn btn-primary" t-on-click="lookup" t-att-disabled="state.loading">
+                        <i class="fa fa-search"/> Buscar
+                    </button>
+                </div>
+                <div t-if="state.loading" class="text-muted"><i class="fa fa-spinner fa-spin"/> Consultando...</div>
+                <div t-if="state.error" class="alert alert-danger py-2" role="alert"><t t-esc="state.error"/></div>
+
+                <t t-if="state.result">
+                    <div class="alert alert-secondary py-2 mb-2">
+                        <div><strong>Venta original:</strong> <t t-esc="state.result.order.pos_reference or state.result.order.name"/>
+                            — <t t-esc="state.result.order.date_order"/></div>
+                        <div><strong>Vendida por:</strong> <t t-esc="state.result.order.company_name"/>
+                            (<t t-esc="state.result.order.config_name"/>)
+                            <span t-if="!state.result.order.same_company" class="badge text-bg-warning ms-1">otra compañía</span>
+                        </div>
+                        <div>
+                            <strong>Comprobante:</strong>
+                            <t t-if="state.result.order.is_fiscal">fiscal <t t-esc="state.result.order.invoice_name"/> → se emite NC fiscal en la compañía que vendió</t>
+                            <t t-else="">no fiscal (NF) → se emite NC interna en la compañía que vendió</t>
+                        </div>
+                    </div>
+
+                    <table class="table table-sm mb-1">
+                        <thead>
+                            <tr><th></th><th>Producto</th><th class="text-end">Disp.</th><th class="text-end">Cant.</th><th class="text-end">Unit.</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="eligibleLines" t-as="l" t-key="l.origin_line_id">
+                                <td><input type="checkbox" class="form-check-input"
+                                           t-att-checked="state.selected[l.origin_line_id] ? true : false"
+                                           t-on-change="(ev) => this.toggleLine(l, ev)"/></td>
+                                <td><t t-esc="l.product_name"/></td>
+                                <td class="text-end"><t t-esc="l.qty_available"/></td>
+                                <td class="text-end" style="width: 90px;">
+                                    <input type="number" class="form-control form-control-sm text-end" min="0" step="1"
+                                           t-att-max="l.qty_available"
+                                           t-att-value="state.selected[l.origin_line_id] || ''"
+                                           t-on-change="(ev) => this.setQty(l, ev)"/>
+                                </td>
+                                <td class="text-end"><t t-esc="formatCurrency(l.unit_price_incl)"/></td>
+                            </tr>
+                            <tr t-foreach="ineligibleLines" t-as="l" t-key="'ne' + l.origin_line_id" class="text-muted">
+                                <td><i class="fa fa-ban"/></td>
+                                <td><t t-esc="l.product_name"/><br/><small><t t-esc="l.reason"/></small></td>
+                                <td class="text-end"><t t-esc="l.qty"/></td>
+                                <td></td>
+                                <td class="text-end"><t t-esc="formatCurrency(l.unit_price_incl)"/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>Falta pagar: <strong><t t-esc="formatCurrency(props.maxAmount)"/></strong></div>
+                        <div class="fs-5">Cambio: <strong t-att-class="exceedsMax ? 'text-danger' : 'text-success'"><t t-esc="formatCurrency(selectedAmount)"/></strong></div>
+                    </div>
+                    <div t-if="exceedsMax" class="text-danger small mt-1">
+                        El cambio supera lo que falta pagar. Agregá productos a la venta o bajá cantidades: no se devuelve diferencia en efectivo.
+                    </div>
+                </t>
+            </div>
+        </xpath>
+    </t>
+</templates>

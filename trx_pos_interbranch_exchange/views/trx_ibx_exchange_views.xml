@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_ibx_exchange_list" model="ir.ui.view">
+        <field name="name">trx.ibx.exchange.list</field>
+        <field name="model">trx.ibx.exchange</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-info="state == 'draft'">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="origin_company_id"/>
+                <field name="origin_order_id"/>
+                <field name="origin_is_fiscal" string="Fiscal"/>
+                <field name="company_id"/>
+                <field name="config_id"/>
+                <field name="pos_order_id"/>
+                <field name="amount" sum="Total"/>
+                <field name="amount_cost" sum="Total costo" optional="show"/>
+                <field name="refund_move_id" optional="show"/>
+                <field name="picking_id" optional="hide"/>
+                <field name="user_id" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_ibx_exchange_form" model="ir.ui.view">
+        <field name="name">trx.ibx.exchange.form</field>
+        <field name="model">trx.ibx.exchange</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                    <button name="action_view_documents" type="object" string="Ver NC y compensación" class="btn-secondary" invisible="not refund_move_id"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group string="Venta original">
+                            <field name="origin_company_id"/>
+                            <field name="origin_order_id"/>
+                            <field name="origin_move_id"/>
+                            <field name="origin_is_fiscal"/>
+                        </group>
+                        <group string="Cambio recibido en">
+                            <field name="company_id"/>
+                            <field name="config_id"/>
+                            <field name="session_id"/>
+                            <field name="pos_order_id"/>
+                            <field name="user_id"/>
+                            <field name="date"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Importes">
+                            <field name="amount"/>
+                            <field name="amount_refund"/>
+                            <field name="amount_cost"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Documentos generados">
+                            <field name="refund_move_id"/>
+                            <field name="settlement_move_id"/>
+                            <field name="picking_id"/>
+                            <field name="same_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Productos">
+                            <field name="line_ids">
+                                <list editable="bottom" create="0" delete="0">
+                                    <field name="product_id"/>
+                                    <field name="qty"/>
+                                    <field name="price_unit"/>
+                                    <field name="discount"/>
+                                    <field name="price_total"/>
+                                    <field name="cost_unit"/>
+                                    <field name="origin_line_id" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notas">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_trx_ibx_exchange_search" model="ir.ui.view">
+        <field name="name">trx.ibx.exchange.search</field>
+        <field name="model">trx.ibx.exchange</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="origin_order_id"/>
+                <field name="pos_order_id"/>
+                <field name="origin_company_id"/>
+                <field name="company_id"/>
+                <filter name="done" string="Realizados" domain="[('state', '=', 'done')]"/>
+                <filter name="draft" string="Preparados" domain="[('state', '=', 'draft')]"/>
+                <filter name="cross" string="Entre compañías distintas" domain="[('same_company', '=', False)]"/>
+                <filter name="this_month" string="Este mes" date="date" default_period="month"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_origin_company" string="Compañía que vendió" context="{'group_by': 'origin_company_id'}"/>
+                    <filter name="group_company" string="Compañía que recibió" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_trx_ibx_exchange_pivot" model="ir.ui.view">
+        <field name="name">trx.ibx.exchange.pivot</field>
+        <field name="model">trx.ibx.exchange</field>
+        <field name="arch" type="xml">
+            <pivot string="Compensación entre compañías">
+                <field name="origin_company_id" type="row"/>
+                <field name="company_id" type="col"/>
+                <field name="amount" type="measure"/>
+                <field name="amount_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_trx_ibx_exchange" model="ir.actions.act_window">
+        <field name="name">Cambios inter-sucursal</field>
+        <field name="res_model">trx.ibx.exchange</field>
+        <field name="view_mode">list,form,pivot</field>
+        <field name="context">{'search_default_done': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Todavía no hay cambios inter-sucursal.</p>
+            <p>Se generan desde el POS con el medio de pago "Cambio inter-sucursal". La vista pivot da la base de la compensación mensual entre compañías: la que vendió le debe a la que recibió el importe del cambio (PVP); la mercadería recibida se informa al costo.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_trx_ibx_exchange" name="Cambios inter-sucursal" parent="point_of_sale.menu_point_of_sale" action="action_trx_ibx_exchange" sequence="25"/>
+</odoo>

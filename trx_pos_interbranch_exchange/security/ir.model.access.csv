@@ -1,0 +1,9 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_trx_ibx_exchange_user,trx.ibx.exchange user,model_trx_ibx_exchange,group_ibx_user,1,0,0,0
+access_trx_ibx_exchange_line_user,trx.ibx.exchange.line user,model_trx_ibx_exchange_line,group_ibx_user,1,0,0,0
+access_trx_ibx_exchange_pos_user,trx.ibx.exchange pos user,model_trx_ibx_exchange,point_of_sale.group_pos_user,1,0,0,0
+access_trx_ibx_exchange_line_pos_user,trx.ibx.exchange.line pos user,model_trx_ibx_exchange_line,point_of_sale.group_pos_user,1,0,0,0
+access_trx_ibx_exchange_manager,trx.ibx.exchange manager,model_trx_ibx_exchange,point_of_sale.group_pos_manager,1,1,1,0
+access_trx_ibx_exchange_line_manager,trx.ibx.exchange.line manager,model_trx_ibx_exchange_line,point_of_sale.group_pos_manager,1,1,1,0
+access_trx_ibx_exchange_account,trx.ibx.exchange account manager,model_trx_ibx_exchange,account.group_account_manager,1,1,0,0
+access_trx_ibx_exchange_line_account,trx.ibx.exchange.line account manager,model_trx_ibx_exchange_line,account.group_account_manager,1,0,0,0
