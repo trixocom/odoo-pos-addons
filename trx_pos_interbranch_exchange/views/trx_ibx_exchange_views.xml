@@ -100,11 +100,11 @@
                 <filter name="done" string="Realizados" domain="[('state', '=', 'done')]"/>
                 <filter name="draft" string="Preparados" domain="[('state', '=', 'draft')]"/>
                 <filter name="cross" string="Entre compañías distintas" domain="[('same_company', '=', False)]"/>
-                <filter name="this_month" string="Este mes" date="date" default_period="month"/>
-                <group expand="0" string="Agrupar por">
-                    <filter name="group_origin_company" string="Compañía que vendió" context="{'group_by': 'origin_company_id'}"/>
-                    <filter name="group_company" string="Compañía que recibió" context="{'group_by': 'company_id'}"/>
-                    <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+                <filter name="this_month" string="Fecha" date="date"/>
+                <group>
+                    <filter name="group_origin_company" string="Compañía que vendió" domain="[]" context="{'group_by': 'origin_company_id'}"/>
+                    <filter name="group_company" string="Compañía que recibió" domain="[]" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_month" string="Mes" domain="[]" context="{'group_by': 'date:month'}"/>
                 </group>
             </search>
         </field>

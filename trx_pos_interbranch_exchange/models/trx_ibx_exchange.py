@@ -194,7 +194,7 @@ class TrxIbxExchange(models.Model):
         if error:
             raise UserError(error)
         session = config.current_session_id
-        if not session or session.state != "opened":
+        if not session or session.state not in ("opened", "opening_control"):
             raise UserError(_("El POS %s no tiene una sesión abierta.", config.name))
         invoice = order.account_move.filtered(lambda m: m.move_type == "out_invoice" and m.state == "posted")[:1]
         line_vals = []
@@ -415,53 +415,52 @@ class TrxIbxExchange(models.Model):
         return nc
 
     def _ibx_create_settlement(self, company_a, company_b, refund):
-        """Asiento en A: Dr Deudores (cliente) / Cr Cta cte inter-sucursal (partner B)
-        y conciliación con la NC, para que el cliente quede en cero en A."""
+        """Reembolso de la NC en A como account.payment saliente en el diario
+        IBXB (cuenta de pago = cta cte inter-sucursal). Deja al cliente en cero
+        en A, la NC en estado "pagada", y el importe acreditado en la cta cte:
+        A le debe ese importe a B (que es quien le dio el producto al cliente)."""
         recv_lines = refund.line_ids.filtered(lambda l: l.account_id.account_type == "asset_receivable")
         if not recv_lines:
             raise UserError(_("La NC %s no tiene línea de deudores.", refund.name))
         amount = abs(sum(recv_lines.mapped("balance")))
         if float_is_zero(amount, precision_rounding=company_a.currency_id.rounding):
             raise UserError(_("La NC %s tiene importe cero.", refund.name))
+        journal = company_a.trx_ibx_bank_journal_id
+        method_line = journal.outbound_payment_method_line_ids[:1]
+        if not journal or not method_line:
+            raise UserError(_("La compañía %s no tiene el diario de cobros inter-sucursal configurado.", company_a.name))
+        if method_line.payment_account_id != company_a.trx_ibx_account_id:
+            method_line.payment_account_id = company_a.trx_ibx_account_id
         label = _("Cambio inter-sucursal %s - NC %s - recibido en %s", self.name, refund.name, company_b.name)
-        Move = self.env["account.move"].sudo().with_company(company_a)
-        move = Move.create(
-            {
-                "move_type": "entry",
-                "company_id": company_a.id,
-                "journal_id": company_a.trx_ibx_journal_id.id,
-                "date": fields.Date.context_today(self),
-                "ref": label,
-                "line_ids": [
-                    (
-                        0,
-                        0,
-                        {
-                            "name": label,
-                            "account_id": recv_lines[0].account_id.id,
-                            "partner_id": refund.partner_id.id,
-                            "debit": amount,
-                            "credit": 0.0,
-                        },
-                    ),
-                    (
-                        0,
-                        0,
-                        {
-                            "name": label,
-                            "account_id": company_a.trx_ibx_account_id.id,
-                            "partner_id": company_b.partner_id.id,
-                            "debit": 0.0,
-                            "credit": amount,
-                        },
-                    ),
-                ],
-            }
-        )
-        move.action_post()
-        to_reconcile = recv_lines + move.line_ids.filtered(lambda l: l.account_id == recv_lines[0].account_id)
-        to_reconcile.reconcile()
-        return move
+        Payment = self.env["account.payment"].sudo().with_company(company_a)
+        vals = {
+            "payment_type": "outbound",
+            "partner_type": "customer",
+            "partner_id": refund.partner_id.commercial_partner_id.id,
+            "amount": amount,
+            "currency_id": refund.currency_id.id,
+            "journal_id": journal.id,
+            "payment_method_line_id": method_line.id,
+            "company_id": company_a.id,
+            "date": fields.Date.context_today(self),
+            "memo": label,
+        }
+        # account_payment_pro (ADHOC): autocompleta "deudas a pagar" con TODAS las líneas
+        # abiertas del partner (peligroso con Consumidor Final) y las concilia al postear.
+        # Le fijamos exactamente las líneas de esta NC.
+        if "to_pay_move_line_ids" in Payment._fields:
+            vals["to_pay_move_line_ids"] = [(6, 0, recv_lines.ids)]
+        payment = Payment.create(vals)
+        if "to_pay_move_line_ids" in Payment._fields:
+            payment.to_pay_move_line_ids = [(6, 0, recv_lines.ids)]
+        payment.action_post()
+        counterpart = payment.move_id.line_ids.filtered(lambda l: l.account_id.account_type == "asset_receivable")
+        pending = (recv_lines + counterpart).filtered(lambda l: not l.reconciled)
+        if len(pending) > 1:
+            pending.reconcile()
+        if any(not l.reconciled for l in recv_lines):
+            raise UserError(_("No se pudo conciliar la NC %s con su reembolso inter-sucursal.", refund.name))
+        return payment.move_id
 
     def _ibx_create_return_picking(self, company_b):
         """Devolución del cliente al depósito del POS que recibe (B)."""
@@ -479,7 +478,7 @@ class TrxIbxExchange(models.Model):
                     0,
                     0,
                     {
-                        "name": _("Cambio inter-sucursal %s", self.name),
+                        # Odoo 19: stock.move ya no tiene campo `name`
                         "product_id": product.id,
                         "product_uom_qty": line.qty,
                         "product_uom": product.uom_id.id,

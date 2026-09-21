@@ -1,6 +1,6 @@
 {
     "name": "POS - Cambio inter-sucursal (multi-compañía)",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.0.1",
     "category": "Sales/Point of Sale",
     "sequence": 8,
     "summary": "Cambio de productos en cualquier sucursal de la red aunque la venta "

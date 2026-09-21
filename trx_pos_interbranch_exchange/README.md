@@ -36,9 +36,17 @@ sucursal, aunque la venta original sea de **otra compañía (CUIT)**.
 | Compañía | Documento | Débito | Crédito |
 |---|---|---|---|
 | A (vendió) | NC (fiscal o NF) | Ventas / IVA | Deudores (cliente) |
-| A | Asiento compensación (diario IBXA) | Deudores (cliente) | Cta cte inter-sucursal (partner B) |
-| B (recibe) | Cierre de sesión POS | Cta cte inter-sucursal (outstanding) | Deudores POS |
-| B | Ingreso de stock | (valoración: stock +costo) | — |
+| A | Reembolso de la NC: `account.payment` saliente en el diario IBXB, conciliado con la NC | Deudores (cliente) | Cta cte inter-sucursal |
+| B (recibe) | Cierre de sesión POS (medio de pago con outstanding = cta cte) | Cta cte inter-sucursal | Deudores POS |
+| B | Ingreso de stock (devolución de cliente) | (valoración: stock +costo) | — |
+
+Por qué un pago y no un asiento manual: la NC queda **conciliada y en estado
+"en proceso de pago"** (pasa a "pagada" cuando la línea de la cta cte se
+concilia con la compensación entre CUIT), el cliente queda en cero en A y el
+importe se ve como un reembolso al cliente, que es lo que ocurrió: A devolvió
+el dinero por intermedio de B. Con `account_payment_pro` (ADHOC) instalado, el
+pago se crea con las líneas de la NC como "deudas a pagar" explícitas, para que
+no autocomplete con otras deudas abiertas del partner (Consumidor Final).
 
 Saldo neto: A acreedora / B deudora por el PVP del cambio. La mercadería queda
 en B sin contrapartida contable automática; el pivot informa PVP y costo por
@@ -54,7 +62,12 @@ cuentas, diarios y medio de pago*. Crea (idempotente):
   el diario tipo banco);
 - diarios `IBXA` (varios, ajustes) e `IBXB` (banco, cobros);
 - medio de pago *Cambio inter-sucursal* (terminal `interbranch_exchange`,
-  outstanding = cta cte, split por transacción) y lo agrega a todos los POS.
+  outstanding = cta cte, sin "identificar cliente") y lo agrega a todos los POS;
+  las líneas de método de pago del diario IBXB apuntan a la cta cte.
+
+**Compañías**: cada CUIT debe ser una compañía **raíz** (sin `parent_id`). En
+Odoo 17+ una compañía con padre es una *sucursal* que comparte plan de cuentas,
+impuestos e identidad fiscal del padre: no sirve para CUIT distintos.
 
 Además: plazo máximo en días, diario para NC de ventas NF (si el diario del
 POS usa documentos), y el tilde en las categorías de producto.
@@ -70,3 +83,14 @@ sin precios, con código de barras Code128 del uuid.
 - Devoluciones en la misma compañía también pasan por acá (mismo circuito;
   la cuenta corriente queda en cero por sí sola).
 - Los preparados que no se confirman en 12 h se cancelan (cron).
+
+## Probado (st_giro, 21-09-2026)
+Venta NF en DIDACTICA (Belgrano) → cambio de 1 unidad tomado en "DEMO Franquicia
+Palermo SRL" (otro CUIT) vía `pos.order.sync_from_ui`: NC `RPDEMO/26-27/0001`
+posteada por 21.780 en Didáctica, reembolso `RE-X 0001-00000003` en IBXB
+conciliado (NC en proceso de pago), cta cte Didáctica −21.780, stock franquicia
+3 → 4, cta cte franquicia +21.780 al cerrar la sesión. Scripts:
+`Girodidactico/demo_compras/08_demo_compania2.py` y `09_probar_cambio_intersucursal.py`.
+El flujo fiscal (NC con CAE) sigue la receta del wizard `account.move.reversal`
+usada por `pos_promotions`; no se pudo probar contra AFIP en test (sin
+certificado).

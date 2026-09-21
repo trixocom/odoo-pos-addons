@@ -133,6 +133,13 @@ class ResCompany(models.Model):
                     "bank",
                     default_account_id=company.trx_ibx_transit_account_id.id,
                 )
+            # Las líneas de método de pago del diario de cobros/pagos IBXB apuntan a la
+            # cuenta corriente: el reembolso de la NC en A (account.payment saliente) y
+            # el cobro POS en B caen directo en la cta cte, sin pasar por "pendientes".
+            bank_journal = company.trx_ibx_bank_journal_id
+            for line in bank_journal.inbound_payment_method_line_ids | bank_journal.outbound_payment_method_line_ids:
+                if line.payment_account_id != company.trx_ibx_account_id:
+                    line.payment_account_id = company.trx_ibx_account_id
             if not company.trx_ibx_payment_method_id:
                 PM = self.env["pos.payment.method"]
                 pm = PM.search(
@@ -150,10 +157,19 @@ class ResCompany(models.Model):
                             "journal_id": company.trx_ibx_bank_journal_id.id,
                             "use_payment_terminal": "interbranch_exchange",
                             "outstanding_account_id": company.trx_ibx_account_id.id,
-                            "split_transactions": True,
+                            # split_transactions = "Identificar cliente": exigiría partner en la venta
+                            "split_transactions": False,
                         }
                     )
                 company.trx_ibx_payment_method_id = pm
+            pm = company.trx_ibx_payment_method_id
+            pm_vals = {}
+            if pm.outstanding_account_id != company.trx_ibx_account_id:
+                pm_vals["outstanding_account_id"] = company.trx_ibx_account_id.id
+            if pm.split_transactions:
+                pm_vals["split_transactions"] = False
+            if pm_vals:
+                pm.write(pm_vals)
             configs = self.env["pos.config"].search([("company_id", "=", company.id)])
             for config in configs:
                 if company.trx_ibx_payment_method_id not in config.payment_method_ids:
