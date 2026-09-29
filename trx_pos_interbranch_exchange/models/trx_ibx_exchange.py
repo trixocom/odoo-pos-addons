@@ -338,7 +338,7 @@ class TrxIbxExchange(models.Model):
 
     def _ibx_create_fiscal_refund(self, company_a, invoice, reason):
         """NC con el wizard account.move.reversal (asigna NC-A/B/C y CbtesAsoc;
-        el action_post dispara el CAE vía l10n_ar_edi si el diario es electrónico)."""
+        el action_post dispara el CAE vía trx_l10n_ar_edi si el diario es electrónico)."""
         Wizard = self.env["account.move.reversal"].sudo().with_company(company_a)
         wiz = Wizard.with_context(active_model="account.move", active_ids=invoice.ids, active_id=invoice.id).create(
             {

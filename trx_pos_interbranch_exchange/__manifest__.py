@@ -1,6 +1,6 @@
 {
     "name": "POS - Cambio inter-sucursal (multi-compañía)",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.1.1",
     "category": "Sales/Point of Sale",
     "sequence": 8,
     "summary": "Cambio de productos en cualquier sucursal de la red aunque la venta "
@@ -21,7 +21,7 @@ Flujo en el POS de la sucursal que toma el cambio (compañía B):
 3. El importe del cambio queda como pago de la venta nueva en B.
 4. Al confirmar la venta en B, en la MISMA transacción:
    * Nota de crédito en A por los productos devueltos: fiscal (NC electrónica
-     con CAE y comprobante asociado, vía account.move.reversal + l10n_ar_edi)
+     con CAE y comprobante asociado, vía account.move.reversal + trx_l10n_ar_edi)
      si la venta original fue facturada; interna (diario de ventas sin
      documentos) si fue una venta NF.
    * Asiento de compensación en A que cancela el saldo a favor del cliente que

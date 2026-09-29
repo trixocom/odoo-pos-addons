@@ -1,6 +1,6 @@
 {
     "name": "POS Promociones (descuento casa + reintegro banco)",
-    "version": "19.0.1.0.7",
+    "version": "19.0.1.0.8",
     "category": "Sales/Point of Sale",
     "sequence": 7,
     "summary": "Promociones en POS: descuento de la casa + reintegro del banco "
@@ -16,7 +16,7 @@ El cajero elige una **promoción** desde un botón del POS. Cada promoción defi
 
 * **% que devuelve el banco** (reintegro): NO se descuenta del total. Solo se
   **informa en el ticket**. La venta se cobra normalmente y se factura como
-  comprobante fiscal (FA-A/B/C con CAE, vía `l10n_ar_pos_edi`).
+  comprobante fiscal (FA-A/B/C con CAE, vía `trx_l10n_ar_pos_edi`).
 
 * Inmediatamente después de la factura, y **dentro de la misma transacción**,
   se emite una **nota de crédito fiscal** (NC-A/B/C con CAE) por el importe de
@@ -24,7 +24,7 @@ El cajero elige una **promoción** desde un botón del POS. Cada promoción defi
   **No se devuelve nada**: ni mercadería ni dinero. La NC es solo el contra-
   comprobante fiscal, asociado a la factura original (CbtesAsoc).
 
-Reutiliza el motor de CAE de `l10n_ar_edi` (el `_post()` del move dispara la
+Reutiliza el motor de CAE de `trx_l10n_ar_edi` (el `_post()` del move dispara la
 solicitud de CAE) y la receta de NC vía el wizard `account.move.reversal`.
 
 La base del reintegro (sobre total con IVA o sobre neto) y si la NC discrimina
@@ -35,7 +35,7 @@ IVA son **configurables por promoción**.
     "license": "LGPL-3",
     "depends": [
         "point_of_sale",
-        "l10n_ar_pos_edi",
+        "trx_l10n_ar_pos_edi",
     ],
     "data": [
         "security/ir.model.access.csv",

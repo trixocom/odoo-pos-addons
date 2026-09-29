@@ -101,7 +101,7 @@ class PosOrder(models.Model):
           mercadería): la NC es solo el contra-comprobante fiscal.
         - Se asocia a la factura original (``reversed_entry_id``) para el
           ``CbtesAsoc`` que exige AFIP en NC.
-        - El ``action_post()`` dispara la solicitud de CAE vía ``l10n_ar_edi``.
+        - El ``action_post()`` dispara la solicitud de CAE vía ``trx_l10n_ar_edi``.
         """
         self.ensure_one()
         promo = self.promotion_id
