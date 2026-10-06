@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_purchase_receipt.TrxReceiptListScreen">
+        <div class="trx-receipt-screen screen h-100 d-flex flex-column bg-100 overflow-hidden">
+            <div class="d-flex flex-wrap align-items-center gap-2 p-2 border-bottom bg-view">
+                <button class="btn btn-lg btn-secondary" t-on-click="() => this.back()">
+                    <i class="fa fa-angle-left me-1"/>Volver a la caja
+                </button>
+                <h4 class="m-0 me-auto">Recepciones pendientes
+                    <small class="text-muted fs-6 ms-1" t-esc="pos.config.name"/>
+                </h4>
+                <input type="text" class="form-control form-control-lg w-auto flex-grow-1 flex-md-grow-0"
+                       style="min-width: 16rem"
+                       placeholder="Buscar proveedor, OC, remito..."
+                       t-model="state.search"/>
+                <button class="btn btn-lg btn-light" title="Actualizar" t-on-click="() => this.load()">
+                    <i class="fa fa-refresh" t-att-class="{'fa-spin': state.loading}"/>
+                </button>
+            </div>
+            <div class="flex-grow-1 overflow-y-auto bg-view">
+                <div t-if="state.loading and !state.receipts.length" class="p-5 text-center text-muted">
+                    <i class="fa fa-circle-o-notch fa-spin fa-2x"/>
+                </div>
+                <div t-elif="!filteredReceipts.length" class="p-5 text-center text-muted">
+                    <i class="fa fa-truck fa-3x d-block mb-3"/>
+                    <t t-if="state.receipts.length">Ninguna recepción coincide con la búsqueda.</t>
+                    <t t-else="">No hay recepciones pendientes para este local.</t>
+                </div>
+                <table t-else="" class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Proveedor</th>
+                            <th>Orden de compra</th>
+                            <th t-if="!ui.isSmall">Ref. proveedor</th>
+                            <th>Recepción</th>
+                            <th t-if="!ui.isSmall">Fecha prevista</th>
+                            <th class="text-end">Avance</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="filteredReceipts" t-as="r" t-key="r.id" class="trx-receipt-row" t-on-click="() => this.open(r)">
+                            <td class="fw-bold" t-esc="r.partner"/>
+                            <td t-esc="r.purchase"/>
+                            <td t-if="!ui.isSmall" t-esc="r.partner_ref"/>
+                            <td>
+                                <span t-esc="r.name"/>
+                                <span t-if="r.is_backorder" class="badge text-bg-warning ms-1">Saldo</span>
+                            </td>
+                            <td t-if="!ui.isSmall" t-esc="formatDate(r.scheduled_date)"/>
+                            <td class="text-end text-nowrap">
+                                <t t-if="r.demand !== false">
+                                    <span t-esc="formatQty(r.scanned)"/> / <span t-esc="formatQty(r.demand)"/>
+                                </t>
+                                <t t-else="">
+                                    <span t-esc="r.line_count"/> artículos
+                                    <span t-if="r.in_progress" class="badge text-bg-info ms-1">En curso</span>
+                                </t>
+                                <i class="fa fa-angle-right ms-2 text-muted"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_purchase_receipt.TrxReceiptScanScreen">
+        <div class="trx-receipt-screen screen h-100 d-flex flex-column bg-100 overflow-hidden">
+            <!-- Encabezado -->
+            <div class="d-flex flex-wrap align-items-center gap-2 p-2 border-bottom bg-view">
+                <button class="btn btn-lg btn-secondary" t-on-click="() => this.goToList()">
+                    <i class="fa fa-angle-left me-1"/>Pendientes
+                </button>
+                <div class="me-auto lh-sm" t-if="state.data">
+                    <div class="fs-4 fw-bold" t-esc="state.data.partner"/>
+                    <div class="text-muted">
+                        <span t-esc="state.data.name"/>
+                        · OC <span t-esc="state.data.purchase"/>
+                        <t t-if="state.data.partner_ref"> · Ref. proveedor <span t-esc="state.data.partner_ref"/></t>
+                        <t t-if="state.data.scheduled_date"> · Prevista <span t-esc="formatDate(state.data.scheduled_date)"/></t>
+                        <span t-if="blind" class="badge text-bg-dark ms-2">A ciegas</span>
+                    </div>
+                </div>
+                <div class="text-end me-2" t-if="state.data">
+                    <div class="fs-4 fw-bold">
+                        <span t-esc="formatQty(totalScanned)"/>
+                        <t t-if="!blind"> / <span t-esc="formatQty(totalDemand)"/></t>
+                    </div>
+                    <div class="small text-muted">
+                        <t t-if="state.saving"><i class="fa fa-circle-o-notch fa-spin"/> guardando</t>
+                        <t t-elif="state.saveError"><span class="text-danger"><i class="fa fa-exclamation-triangle"/> sin guardar</span></t>
+                        <t t-else="">unidades</t>
+                    </div>
+                </div>
+                <button class="btn btn-lg btn-primary" t-att-disabled="state.validating or !state.data" t-on-click="() => this.validate()">
+                    <i class="fa me-1" t-att-class="state.validating ? 'fa-circle-o-notch fa-spin' : 'fa-check'"/>Validar recepción
+                </button>
+            </div>
+            <div t-if="!blind and state.data" class="progress rounded-0" style="height: 6px">
+                <div class="progress-bar bg-success" t-attf-style="width: {{progressPct}}%"/>
+            </div>
+
+            <!-- Lectura manual -->
+            <form class="d-flex align-items-center gap-2 p-2 border-bottom bg-view" t-on-submit="onSubmitCode">
+                <i class="fa fa-barcode fa-2x text-muted"/>
+                <input t-ref="codeInput" type="text" autocomplete="off"
+                       class="form-control form-control-lg trx-scan-input"
+                       placeholder="Escaneá o tipeá código de barras, alfa o del proveedor"
+                       t-model="state.code"/>
+                <button type="submit" class="btn btn-lg btn-light">Agregar</button>
+            </form>
+
+            <!-- Líneas -->
+            <div class="flex-grow-1 overflow-y-auto bg-view">
+                <div t-if="state.loading" class="p-5 text-center text-muted">
+                    <i class="fa fa-circle-o-notch fa-spin fa-2x"/>
+                </div>
+                <t t-else="">
+                    <div t-foreach="state.lines" t-as="line" t-key="line.move_id"
+                         class="trx-line d-flex align-items-center gap-2 px-3 py-2 border-bottom"
+                         t-att-class="lineClass(line)" t-att-data-move-id="line.move_id">
+                        <div class="flex-grow-1" t-on-click="() => this.editQty(line)">
+                            <div class="fw-bold" t-esc="line.name"/>
+                            <div class="small text-muted">
+                                <t t-if="line.default_code">Alfa <b t-esc="line.default_code"/></t>
+                                <t t-if="line.vendor_code"> · Prov. <b t-esc="line.vendor_code"/></t>
+                                <t t-if="line.barcode"> · <i class="fa fa-barcode"/> <t t-esc="line.barcode"/></t>
+                                <span t-if="line.tracking" class="badge text-bg-warning ms-1">Lote/serie: recibir en backend</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-light btn-lg" title="Restar 1" t-att-disabled="!line.scanned" t-on-click="() => this.increment(line, -1)">
+                            <i class="fa fa-minus"/>
+                        </button>
+                        <div class="trx-qty" t-on-click="() => this.editQty(line)">
+                            <span t-esc="formatQty(line.scanned || 0)"/>
+                            <t t-if="!blind"><span class="text-muted fw-normal"> / <t t-esc="formatQty(line.demand)"/></span></t>
+                            <div class="small text-muted fw-normal" t-esc="line.uom"/>
+                        </div>
+                        <button class="btn btn-light btn-lg" title="Sumar 1" t-on-click="() => this.increment(line, 1)">
+                            <i class="fa fa-plus"/>
+                        </button>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

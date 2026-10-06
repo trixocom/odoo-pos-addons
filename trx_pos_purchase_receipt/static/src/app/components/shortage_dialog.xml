@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_purchase_receipt.TrxShortageDialog">
+        <Dialog title="props.title" size="'md'">
+            <p class="mb-2">Faltan unidades de lo pedido:</p>
+            <table class="table table-sm mb-3">
+                <thead><tr><th>Artículo</th><th class="text-end">Pedido</th><th class="text-end">Recibido</th><th class="text-end">Falta</th></tr></thead>
+                <tbody>
+                    <tr t-foreach="props.shortLines" t-as="l" t-key="l.move_id">
+                        <td t-esc="l.label"/>
+                        <td class="text-end" t-esc="l.demandStr"/>
+                        <td class="text-end" t-esc="l.scannedStr"/>
+                        <td class="text-end fw-bold text-danger" t-esc="l.diffStr"/>
+                    </tr>
+                </tbody>
+            </table>
+            <t t-if="props.overLines and props.overLines.length">
+                <p class="mb-2">Y se recibe <b>más</b> de lo pedido en:</p>
+                <ul>
+                    <li t-foreach="props.overLines" t-as="l" t-key="l.move_id">
+                        <t t-esc="l.label"/>: pedido <t t-esc="l.demandStr"/>, recibido <t t-esc="l.scannedStr"/>
+                    </li>
+                </ul>
+            </t>
+            <p class="mb-0">¿Qué pasa con lo que falta?</p>
+            <t t-set-slot="footer">
+                <button t-if="props.policy !== 'never'" class="btn btn-lg btn-primary" t-on-click="() => this.choose('backorder')">
+                    Queda pendiente (llega después)
+                </button>
+                <button t-if="props.policy !== 'always'" class="btn btn-lg btn-danger" t-on-click="() => this.choose('cancel')">
+                    No llega más
+                </button>
+                <button class="btn btn-lg btn-secondary" t-on-click="() => this.props.close()">
+                    Seguir escaneando
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

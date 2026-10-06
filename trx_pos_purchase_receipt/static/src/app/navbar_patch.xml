@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_purchase_receipt.Navbar" t-inherit="point_of_sale.Navbar" t-inherit-mode="extension">
+        <xpath expr="//button[hasclass('orders-button')]" position="after">
+            <button t-if="pos.config.trx_receipt_allowed"
+                    class="trx-receipts-button btn btn-lg btn-light lh-lg position-relative"
+                    t-att-class="{'active': mainButton === 'trx_receipt'}"
+                    title="Recepciones de mercadería pendientes"
+                    t-on-click="() => this.onClickTrxReceipts()">
+                <span t-if="!ui.isSmall">Recepciones</span>
+                <i t-else="" class="fa fa-fw fa-truck fa-lg"/>
+                <span t-if="pos.trxReceiptCount" class="badge rounded-pill text-bg-danger ms-1" t-esc="pos.trxReceiptCount"/>
+            </button>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,28 @@
+.trx-receipt-screen {
+    .trx-receipt-row {
+        cursor: pointer;
+    }
+    .trx-line {
+        cursor: pointer;
+        transition: background-color 0.3s;
+        &.trx-line-done {
+            background-color: rgba(var(--bs-success-rgb), 0.12);
+        }
+        &.trx-line-over {
+            background-color: rgba(var(--bs-warning-rgb), 0.22);
+        }
+        &.trx-line-last {
+            outline: 3px solid var(--bs-primary);
+            outline-offset: -3px;
+        }
+    }
+    .trx-qty {
+        font-size: 1.4rem;
+        font-weight: 600;
+        min-width: 6rem;
+        text-align: end;
+    }
+    .trx-scan-input {
+        max-width: 28rem;
+    }
+}
