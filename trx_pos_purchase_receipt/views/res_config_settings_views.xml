@@ -13,6 +13,10 @@
                         <field name="pos_trx_receipt_blind" class="w-auto me-2"/>
                         <label for="pos_trx_receipt_blind" string="Recepción a ciegas (sin ver lo pedido)"/>
                     </div>
+                    <div class="mt-2" invisible="not pos_trx_receipt_enabled">
+                        <label for="pos_trx_receipt_label_format" string="Etiquetas de precio al recibir" class="me-2"/>
+                        <field name="pos_trx_receipt_label_format" class="w-auto"/>
+                    </div>
                 </setting>
             </xpath>
         </field>

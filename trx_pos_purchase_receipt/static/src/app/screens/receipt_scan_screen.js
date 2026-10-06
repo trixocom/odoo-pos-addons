@@ -201,7 +201,7 @@ export class TrxReceiptScanScreen extends Component {
         const before = line.scanned || 0;
         if (!this.blind && this.state.data.block_over && round4(qty) > line.demand) {
             this.notification.add(
-                _t("%(item)s: no se puede recibir más de lo pedido (%(qty)s).", {
+                _t("%(item)s: no se puede recibir más de lo pedido (%(qty)s). Si llegó de más, pedí al supervisor o gerente que corrija la orden de compra.", {
                     item: this.lineLabel(line),
                     qty: trxFormatQty(line.demand),
                 }),
@@ -362,9 +362,64 @@ export class TrxReceiptScanScreen extends Component {
         if (res.backorder) {
             msg += " " + _t("Lo faltante quedó pendiente en %s.", res.backorder);
         }
-        this.notification.add(msg, { type: "success", title: _t("Recepción validada") });
         this.pos.trxRefreshReceiptCount();
+        const labelFormat = res.label_format;
+        if (labelFormat && labelFormat !== "none") {
+            const print = await ask(this.dialog, {
+                title: _t("Recepción validada"),
+                body: msg + "\n\n" + _t("¿Imprimir las etiquetas de precio de lo recibido (una por unidad)?"),
+                confirmLabel: _t("Imprimir etiquetas"),
+                cancelLabel: _t("Ahora no"),
+            });
+            if (print) {
+                await this.printLabels(res.id);
+            }
+        } else {
+            this.notification.add(msg, { type: "success", title: _t("Recepción validada") });
+        }
         this.goToList();
+    }
+
+    async printLabels(pickingId) {
+        const res = await this.pos.trxReceiptCall("trx_pos_receipt_labels", [pickingId]);
+        if (!res?.pdf) {
+            return;
+        }
+        const bytes = Uint8Array.from(atob(res.pdf), (c) => c.charCodeAt(0));
+        const url = URL.createObjectURL(new Blob([bytes], { type: "application/pdf" }));
+        // Diálogo de impresión del navegador sin salir del POS (iframe oculto, como
+        // trixo_direct_print). Si el navegador no lo permite, se abre el PDF aparte.
+        const iframe = document.createElement("iframe");
+        Object.assign(iframe.style, { position: "fixed", right: "0", bottom: "0", width: "0", height: "0", border: "none" });
+        const openApart = () => {
+            const win = window.open(url, "_blank");
+            if (!win) {
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = res.filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        };
+        iframe.addEventListener("load", () => {
+            setTimeout(() => {
+                try {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+                } catch {
+                    openApart();
+                }
+            }, 500);
+        });
+        iframe.addEventListener("error", openApart);
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        this.notification.add(_t("%s etiquetas enviadas a imprimir.", res.count), { type: "info" });
+        setTimeout(() => {
+            iframe.remove();
+            URL.revokeObjectURL(url);
+        }, 120000);
     }
 
     async goToList() {

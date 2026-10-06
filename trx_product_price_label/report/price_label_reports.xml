@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_price_label_thermal" model="report.paperformat">
+        <field name="name">Etiqueta de precio térmica 50 x 25 mm</field>
+        <field name="default" eval="False"/>
+        <field name="format">custom</field>
+        <field name="page_width">50</field>
+        <field name="page_height">25</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_spacing">0</field>
+        <field name="disable_shrinking" eval="True"/>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="paperformat_price_label_sheet" model="report.paperformat">
+        <field name="name">Etiquetas de precio A4 3 x 8 (70 x 37 mm)</field>
+        <field name="default" eval="False"/>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">0</field>
+        <field name="margin_bottom">0</field>
+        <field name="margin_left">0</field>
+        <field name="margin_right">0</field>
+        <field name="header_spacing">0</field>
+        <field name="disable_shrinking" eval="True"/>
+        <field name="dpi">96</field>
+    </record>
+
+    <record id="report_price_label_thermal" model="ir.actions.report">
+        <field name="name">Etiqueta de precio térmica 50 x 25 mm</field>
+        <field name="model">product.product</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">trx_product_price_label.report_price_label_thermal_doc</field>
+        <field name="report_file">trx_product_price_label.report_price_label_thermal_doc</field>
+        <field name="paperformat_id" ref="paperformat_price_label_thermal"/>
+        <field name="print_report_name">'Etiquetas de precio'</field>
+    </record>
+
+    <record id="report_price_label_sheet" model="ir.actions.report">
+        <field name="name">Etiquetas de precio A4 3 x 8</field>
+        <field name="model">product.product</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">trx_product_price_label.report_price_label_sheet_doc</field>
+        <field name="report_file">trx_product_price_label.report_price_label_sheet_doc</field>
+        <field name="paperformat_id" ref="paperformat_price_label_sheet"/>
+        <field name="print_report_name">'Etiquetas de precio'</field>
+    </record>
+</odoo>

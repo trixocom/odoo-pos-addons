@@ -154,6 +154,23 @@ class TestPosPurchaseReceipt(TransactionCase):
         self.assertIn(backorder.id, pending_ids)
         self.assertNotIn(picking.id, pending_ids)
 
+    def test_labels_after_receipt(self):
+        self.config.trx_receipt_label_format = "trx_thermal"
+        _po, picking = self._po([(self.product, 5), (self.product2, 2)])
+        m1 = picking.move_ids.filtered(lambda m: m.product_id == self.product)
+        m2 = picking.move_ids.filtered(lambda m: m.product_id == self.product2)
+        api = self._api()
+        with self.assertRaises(UserError):
+            # todavía no está validada
+            api.trx_pos_receipt_labels(self.config.id, picking.id)
+        api.trx_pos_receipt_validate(self.config.id, picking.id, {str(m1.id): 3, str(m2.id): 2}, "cancel")
+        res = api.trx_pos_receipt_labels(self.config.id, picking.id)
+        self.assertEqual(res["count"], 5)
+        self.assertTrue(res["pdf"])
+        self.config.trx_receipt_label_format = "none"
+        with self.assertRaises(UserError):
+            api.trx_pos_receipt_labels(self.config.id, picking.id)
+
     def test_partial_no_backorder(self):
         po, picking = self._po([(self.product, 5)])
         res = self._api().trx_pos_receipt_validate(

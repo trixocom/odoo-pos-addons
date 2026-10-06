@@ -14,6 +14,18 @@ class PosConfig(models.Model):
         help="Quien recibe sin el permiso 'Recibir mercadería y ver cantidades pedidas' no ve "
         "las cantidades pedidas: solo escanea lo que llegó. Lo faltante queda pendiente.",
     )
+    trx_receipt_label_format = fields.Selection(
+        [
+            ("none", "No imprimir"),
+            ("trx_thermal", "Térmica 50 x 25 mm"),
+            ("trx_sheet", "Hoja A4 3 x 8 (70 x 37 mm)"),
+        ],
+        string="Etiquetas al recibir",
+        default="trx_thermal",
+        required=True,
+        help="Al validar una recepción en el POS se ofrece imprimir una etiqueta de precio por "
+        "unidad recibida en este formato.",
+    )
     trx_receipt_allowed = fields.Boolean(
         string="Puede recibir mercadería (usuario actual)",
         compute="_compute_trx_receipt_user",

@@ -1,6 +1,6 @@
 {
     "name": "POS - Recepción de mercadería (OC pendientes)",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Sales/Point of Sale",
     "summary": "Recibir desde el POS las entradas (WH/IN) pendientes de las órdenes de compra, "
     "leyendo códigos de barras, al estilo de la app Barcode.",
@@ -24,6 +24,8 @@ Las órdenes de compra se cargan en el backend. Al confirmarlas, Odoo deja la en
 * Recepción a ciegas opcional por punto de venta: quien no tiene el permiso
   "Ver cantidades pedidas" no ve lo pedido (el servidor no lo envía); lo faltante
   queda siempre pendiente y las diferencias se registran en la entrada.
+* Al validar ofrece imprimir las **etiquetas de precio** de lo recibido (una por
+  unidad), en el formato elegido por punto de venta (térmica 50 x 25 mm u hoja A4).
 * El cajero no necesita permisos de Inventario ni de Compras: el servidor valida el
   permiso "Recibir mercadería en el POS", el depósito del punto de venta y registra
   quién recibió (usuario y empleado del POS) en la entrada y en la OC.
@@ -33,7 +35,7 @@ Autor: Trixocom.
     "author": "Trixocom",
     "website": "https://www.trixocom.com",
     "license": "LGPL-3",
-    "depends": ["point_of_sale", "purchase_stock"],
+    "depends": ["point_of_sale", "purchase_stock", "trx_product_price_label"],
     "data": [
         "security/security.xml",
         "views/res_config_settings_views.xml",

@@ -1,4 +1,5 @@
 # Part of trx_pos_purchase_receipt. Author: Trixocom. License: LGPL-3.
+import base64
 import logging
 
 from markupsafe import Markup
@@ -158,6 +159,8 @@ class StockPicking(models.Model):
         return {
             "id": picking.id,
             "name": picking.name,
+            # Lo decide el servidor: el POS puede tener la configuración vieja en caché
+            "label_format": config.trx_receipt_label_format or "none",
             "purchase": picking.purchase_id.name or "",
             "partner": (picking.purchase_id.partner_id or picking.partner_id).display_name or "",
             "partner_ref": picking.purchase_id.partner_ref or "",
@@ -244,7 +247,7 @@ class StockPicking(models.Model):
             raise UserError(
                 _(
                     "No se puede recibir más de lo pedido en %(picking)s: %(items)s. "
-                    "Revisá lo escaneado o pedí que se corrija la orden de compra.",
+                    "Revisá lo escaneado o pedí al supervisor o gerente que corrija la orden de compra.",
                     picking=picking.name,
                     items=", ".join(m.product_id.display_name for m, _d, _s in over),
                 )
@@ -273,10 +276,54 @@ class StockPicking(models.Model):
         backorder = self.sudo().search([("backorder_id", "=", picking.id)], limit=1)
         self._trx_receipt_log(config, picking, diffs, shortage if has_short else None, backorder, cashier, blind)
         return {
+            "id": picking.id,
             "name": picking.name,
+            # Lo decide el servidor: el POS puede tener la configuración vieja en caché
+            "label_format": config.trx_receipt_label_format or "none",
             "backorder": backorder.name or False,
             "short": has_short,
             "over": bool(over),
+        }
+
+    @api.model
+    def trx_pos_receipt_labels(self, config_id, picking_id):
+        """PDF (base64) con una etiqueta de precio por unidad recibida en la entrada."""
+        config = self._trx_receipt_config(config_id)
+        if config.trx_receipt_label_format in (False, "none"):
+            raise UserError(_("Este punto de venta no imprime etiquetas al recibir."))
+        domain = self._trx_receipt_domain(config)
+        domain = [d for d in domain if d[0] not in ("state", "purchase_id")] + [
+            ("state", "=", "done"),
+            ("id", "=", int(picking_id)),
+        ]
+        picking = self.sudo().with_company(config.company_id).search(domain, limit=1)
+        if not picking:
+            raise UserError(_("No se encontró la recepción validada en este depósito."))
+        moves = picking.move_ids.filtered(lambda m: m.state == "done" and m.quantity > 0)
+        if not moves:
+            raise UserError(_("%s no tiene unidades recibidas.", picking.name))
+        Layout = self.env["product.label.layout"].sudo().with_company(config.company_id)
+        wizard = Layout.create(
+            {
+                "print_format": config.trx_receipt_label_format,
+                "product_ids": [(6, 0, moves.product_id.ids)],
+                "move_ids": [(6, 0, moves.ids)],
+                "move_quantity": "move",
+            }
+        )
+        xml_id, data = wizard._prepare_report_data()
+        report = self.env.ref(xml_id).sudo()
+        pdf, _type = (
+            self.env["ir.actions.report"]
+            .sudo()
+            .with_company(config.company_id)
+            ._render_qweb_pdf(report.report_name, moves.product_id.ids, data=data)
+        )
+        count = sum(int(q) for q in (data.get("quantity_by_product") or {}).values())
+        return {
+            "pdf": base64.b64encode(pdf).decode(),
+            "filename": "Etiquetas %s.pdf" % picking.name.replace("/", "-"),
+            "count": count,
         }
 
     @api.model
