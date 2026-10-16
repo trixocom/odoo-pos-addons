@@ -5,16 +5,24 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_search_view"/>
         <field name="arch" type="xml">
+            <!-- La opción "Producto" del buscador también encuentra por código de proveedor -->
+            <field name="name" position="attributes">
+                <attribute name="filter_domain">['|', '|', '|', '|', ('default_code', 'ilike', self), ('product_variant_ids.default_code', 'ilike', self), ('name', 'ilike', self), ('barcode', 'ilike', self), ('trx_supplier_codes', 'ilike', self)]</attribute>
+            </field>
             <field name="name" position="after">
                 <field name="trx_supplier_codes" string="Código de proveedor"/>
             </field>
         </field>
     </record>
+
     <record id="product_search_form_view_trx_supplier_code" model="ir.ui.view">
         <field name="name">product.product.search.trx.supplier.code</field>
         <field name="model">product.product</field>
         <field name="inherit_id" ref="product.product_search_form_view"/>
         <field name="arch" type="xml">
+            <field name="name" position="attributes">
+                <attribute name="filter_domain">['|', '|', '|', ('default_code', 'ilike', self), ('name', 'ilike', self), ('barcode', 'ilike', self), ('product_tmpl_id.trx_supplier_codes', 'ilike', self)]</attribute>
+            </field>
             <field name="name" position="after">
                 <field name="trx_supplier_codes" string="Código de proveedor"/>
             </field>

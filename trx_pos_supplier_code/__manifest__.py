@@ -1,6 +1,6 @@
 {
     "name": "POS - Búsqueda por código de proveedor",
-    "version": "19.0.1.0.0",
+    "version": "19.0.1.1.0",
     "category": "Sales/Point of Sale",
     "summary": "Busca productos en el POS (y en el backend) por los códigos de artículo de sus proveedores.",
     "description": """
@@ -14,7 +14,10 @@ ese código.
 * POS: la búsqueda de productos encuentra el artículo por cualquiera de esos
   códigos, tanto en los productos cargados como en la búsqueda en el servidor.
 * Backend: los buscadores de productos (plantillas y variantes) aceptan el
-  código de proveedor.
+  código de proveedor, también en la opción "Producto" por defecto.
+* Campo Producto de líneas de OC, facturas y pedidos: encuentra por código de
+  CUALQUIER proveedor aunque no haya proveedor cargado; con proveedor cargado,
+  la coincidencia exacta con un código de ese proveedor va primero.
 
 Autor: Trixocom.
 """,
