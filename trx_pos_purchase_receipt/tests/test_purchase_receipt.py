@@ -171,6 +171,35 @@ class TestPosPurchaseReceipt(TransactionCase):
         with self.assertRaises(UserError):
             api.trx_pos_receipt_labels(self.config.id, picking.id)
 
+    def test_labels_use_pos_pricelist(self):
+        """Las etiquetas al recibir salen con el precio de la lista de la caja (Interior +10 %),
+        no con el precio base del artículo."""
+        self.config.trx_receipt_label_format = "trx_thermal"
+        self.product.write({"list_price": 1000.0, "taxes_id": [(5, 0, 0)]})
+        pricelist = self.env["product.pricelist"].create(
+            {
+                "name": "TEST REC Interior +10 %",
+                "item_ids": [(0, 0, {"applied_on": "3_global", "compute_price": "percentage", "percent_price": -10})],
+            }
+        )
+        self.config.write(
+            {"use_pricelist": True, "available_pricelist_ids": [(4, pricelist.id)], "pricelist_id": pricelist.id}
+        )
+        _po, picking = self._po([(self.product, 2)])
+        move = picking.move_ids
+        api = self._api()
+        api.trx_pos_receipt_validate(self.config.id, picking.id, {str(move.id): 2}, "cancel")
+        res = api.trx_pos_receipt_labels(self.config.id, picking.id)
+        self.assertEqual(res["count"], 2)
+        wizard = self.env["product.label.layout"].search([("move_ids", "in", move.ids)], order="id desc", limit=1)
+        self.assertTrue(wizard)
+        self.assertEqual(wizard.pricelist_id, pricelist)
+        Mixin = self.env["trx.price.label.mixin"].with_company(self.company)
+        _currency, final, _without = Mixin._trx_label_prices(self.product, wizard.pricelist_id)
+        self.assertAlmostEqual(final, 1100.0, places=2)
+        _currency, base, _without = Mixin._trx_label_prices(self.product, self.env["product.pricelist"])
+        self.assertAlmostEqual(base, 1000.0, places=2)
+
     def test_partial_no_backorder(self):
         po, picking = self._po([(self.product, 5)])
         res = self._api().trx_pos_receipt_validate(

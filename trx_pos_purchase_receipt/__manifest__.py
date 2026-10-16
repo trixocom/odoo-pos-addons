@@ -1,6 +1,6 @@
 {
     "name": "POS - Recepción de mercadería (OC pendientes)",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.1.1",
     "category": "Sales/Point of Sale",
     "summary": "Recibir desde el POS las entradas (WH/IN) pendientes de las órdenes de compra, "
     "leyendo códigos de barras, al estilo de la app Barcode.",

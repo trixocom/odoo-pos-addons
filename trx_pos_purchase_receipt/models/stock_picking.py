@@ -309,6 +309,9 @@ class StockPicking(models.Model):
                 "product_ids": [(6, 0, moves.product_id.ids)],
                 "move_ids": [(6, 0, moves.ids)],
                 "move_quantity": "move",
+                # Precio de la lista de la caja (p. ej. "Interior" = base + 10 %),
+                # no el precio base del artículo. Sin lista: precio de venta.
+                "pricelist_id": config.pricelist_id.id,
             }
         )
         xml_id, data = wizard._prepare_report_data()
