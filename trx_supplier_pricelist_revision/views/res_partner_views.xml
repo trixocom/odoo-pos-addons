@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_partner_form_trx_pricelist_revision" model="ir.ui.view">
+        <field name="name">res.partner.form.trx.pricelist.revision</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_trx_revisions" icon="fa-file-excel-o"
+                        invisible="trx_revision_count == 0" groups="purchase.group_purchase_user">
+                    <field name="trx_revision_count" widget="statinfo" string="Listas de precios"/>
+                </button>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Listas de precios y códigos" name="trx_pricelist" groups="purchase.group_purchase_user">
+                    <div class="mb-3">
+                        <button name="action_new_trx_revision" type="object" string="Subir lista de precios" class="btn btn-primary"
+                                groups="purchase.group_purchase_manager"/>
+                    </div>
+                    <group>
+                        <group string="Regla de PVP para las listas de este proveedor">
+                            <field name="trx_pricelist_discount"/>
+                            <field name="trx_pvp_rule"/>
+                            <field name="trx_pvp_factor" invisible="trx_pvp_rule not in ('list_factor', 'cost_factor')"/>
+                            <field name="trx_pvp_rounding"/>
+                        </group>
+                        <group string="Código alfa de los artículos nuevos">
+                            <field name="trx_alfa_prefix" placeholder="3 primeras letras del nombre"/>
+                            <field name="trx_alfa_next"/>
+                            <field name="trx_alfa_padding"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

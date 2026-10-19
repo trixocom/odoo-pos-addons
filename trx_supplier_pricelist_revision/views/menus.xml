@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_trx_supplier_pricelist_revision" name="Listas de proveedor"
+              parent="purchase.menu_purchase_products" action="action_trx_supplier_pricelist_revision" sequence="5"
+              groups="purchase.group_purchase_user"/>
+</odoo>

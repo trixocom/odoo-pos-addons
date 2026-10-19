@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_trx_supplier_pricelist_revision" model="ir.sequence">
+            <field name="name">Listas de proveedor (revisión de precios)</field>
+            <field name="code">trx.supplier.pricelist.revision</field>
+            <field name="prefix">LP/%(year)s/</field>
+            <field name="padding">5</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <record id="ir_cron_apply_scheduled" model="ir.cron">
+            <field name="name">Compras: aplicar listas de proveedor programadas</field>
+            <field name="model_id" ref="model_trx_supplier_pricelist_revision"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_apply_scheduled()</field>
+            <field name="interval_number">15</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>
