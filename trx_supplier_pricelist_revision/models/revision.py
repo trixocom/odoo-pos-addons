@@ -164,6 +164,17 @@ class TrxSupplierPricelistRevision(models.Model):
             rec.line_ids._compute_proposals(force=False)
         return True
 
+    def action_create_all_new(self):
+        """Incorporar en masa: crea el artículo de todas las líneas 'Nuevo' que tienen descripción y precio."""
+        for rec in self:
+            if rec.state not in ("draft", "review"):
+                raise UserError(_("Sólo en revisión."))
+            lines = rec.line_ids.filtered(lambda l: l.match_state == "new" and l.supplier_name and l.list_price > 0)
+            if not lines:
+                raise UserError(_("No hay líneas nuevas con descripción y precio para incorporar."))
+            lines.action_create_product()
+        return True
+
     def action_recompute_pvp_all(self):
         """Recalcula el PVP propuesto de todas las líneas con la regla del documento (pisa lo editado a mano)."""
         for rec in self:

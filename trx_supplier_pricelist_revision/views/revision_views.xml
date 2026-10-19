@@ -12,6 +12,9 @@
                     <button name="action_recompute" type="object" string="Reconocer y recalcular"
                             invisible="state != 'review'"
                             help="Vuelve a reconocer artículos, toma los costos y PVP vigentes y propone el PVP (respeta los PVP editados a mano)."/>
+                    <button name="action_create_all_new" type="object" string="Incorporar todos los nuevos"
+                            invisible="state not in ('draft', 'review') or count_new == 0"
+                            confirm="Se crean los artículos de TODAS las líneas nuevas con descripción y precio (código alfa automático, PVP propuesto, línea de proveedor). Para elegir cuáles, usá el botón 'Nuevos' y la acción 'Incorporar' sobre la selección. ¿Continuar?"/>
                     <button name="action_schedule" type="object" string="Programar" class="btn-primary"
                             invisible="state != 'review'"/>
                     <button name="action_apply_now" type="object" string="Aplicar ahora"
@@ -101,7 +104,7 @@
                                     <field name="supplier_code"/>
                                     <field name="supplier_name"/>
                                     <field name="barcode" optional="hide"/>
-                                    <field name="product_tmpl_id" options="{'no_create': True, 'no_open': True}"/>
+                                    <field name="product_tmpl_id" options="{'no_create': True}"/>
                                     <field name="match_state" widget="badge"
                                            decoration-success="match_state == 'matched'" decoration-info="match_state == 'new'"
                                            decoration-warning="match_state in ('suggested', 'unresolved')"/>

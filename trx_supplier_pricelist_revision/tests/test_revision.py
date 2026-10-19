@@ -163,3 +163,14 @@ class TestSupplierPricelistRevision(TransactionCase):
         # el prefijo por defecto sale de las 3 primeras letras del nombre
         other = self.env["res.partner"].create({"name": "Baby Club SA", "supplier_rank": 1})
         self.assertEqual(other._trx_next_alfa(), "BAB1")
+
+    def test_create_all_new_from_document(self):
+        rev = self._revision()
+        self.assertEqual(rev.count_new, 2)
+        rev.action_create_all_new()
+        self.assertEqual(rev.count_new, 0)
+        created = rev.line_ids.filtered(lambda l: l.match_by == "created")
+        self.assertEqual(len(created), 2)
+        self.assertEqual(sorted(created.mapped("product_tmpl_id.default_code")), ["QAD1", "QAD2"])
+        with self.assertRaises(Exception):
+            rev.action_create_all_new()  # ya no queda nada nuevo
