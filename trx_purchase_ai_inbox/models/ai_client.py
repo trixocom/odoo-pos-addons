@@ -5,11 +5,16 @@ La salida se fuerza con una herramienta (tool use) con esquema JSON: cabecera fi
 campos abiertos (EAN13 si está impreso, código del proveedor, descuentos de línea), descuentos
 globales al pie, otros cargos y percepciones. Sin API key o sin red, levanta UserError.
 """
+import base64
+import io
 import json
 import re
 import logging
+import zipfile
 
 import requests
+
+from lxml import etree
 
 from odoo import _, models
 from odoo.exceptions import UserError
@@ -123,6 +128,8 @@ TOOL_SCHEMA = {
 
 SYSTEM_PROMPT = """Sos un asistente de Compras de una cadena de jugueterías en Argentina. Leés facturas de proveedores \
 (PDF o foto) y devolvés los datos SIEMPRE llamando a la herramienta registrar_factura (nunca como texto), con estas reglas:
+- En comprobante.tipo poné lo que dice el documento: FACTURA, NOTA DE CRÉDITO, NOTA DE DÉBITO, REMITO, PRESUPUESTO, \
+SOLICITUD DE PEDIDO, PROFORMA, etc. Si es un Word o texto plano, leelo igual que una factura impresa.
 - Transcribí sólo lo que está impreso. Lo que no está, queda vacío o en 0. No inventes códigos, EAN ni importes.
 - Los números van como número (12345.67), sin separador de miles; el punto es el decimal.
 - CUIT: sólo dígitos. Fechas: YYYY-MM-DD.
@@ -150,20 +157,105 @@ class TrxPurchaseAiClient(models.AbstractModel):
             raise UserError(_("Falta la API key de Anthropic (Compras → Configuración → Ajustes → Facturas escaneadas)."))
         return key, model
 
-    def _document_block(self, data_b64, mimetype, filename):
+    IMAGE_TYPES = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif"}
+    WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+
+    def _docx_to_text(self, data):
+        """Texto de un .docx (párrafos y tablas, sin dependencias): las tablas van como filas con ' | '."""
+        w = "{%s}" % self.WORD_NS
+        with zipfile.ZipFile(io.BytesIO(data)) as z:
+            root = etree.fromstring(z.read("word/document.xml"))
+            images = []
+            for name in z.namelist():
+                ext = name.lower().rsplit(".", 1)[-1]
+                if name.startswith("word/media/") and ext in self.IMAGE_TYPES and len(images) < 10:
+                    raw = z.read(name)
+                    if 0 < len(raw) <= 5 * 1024 * 1024:
+                        images.append({"type": "image", "source": {"type": "base64", "media_type": self.IMAGE_TYPES[ext], "data": base64.b64encode(raw).decode()}})
+
+        def para_text(p):
+            parts = []
+            for node in p.iter():
+                if node.tag == w + "t":
+                    parts.append(node.text or "")
+                elif node.tag == w + "tab":
+                    parts.append("\t")
+                elif node.tag in (w + "br", w + "cr"):
+                    parts.append("\n")
+            return "".join(parts)
+
+        lines = []
+        body = root.find(w + "body")
+        for el in (body if body is not None else root):
+            if el.tag == w + "p":
+                lines.append(para_text(el))
+            elif el.tag == w + "tbl":
+                for tr in el.iter(w + "tr"):
+                    cells = []
+                    for tc in tr.findall(w + "tc"):
+                        cells.append(" ".join(para_text(p) for p in tc.findall(w + "p")).strip())
+                    lines.append(" | ".join(cells))
+                lines.append("")
+        text = "\n".join(lines).strip()
+        return text, images
+
+    @staticmethod
+    def _doc_to_text(data):
+        """Texto de un Word 97-2003 (.doc) sin dependencias. El texto está en el archivo como UTF-16LE o cp1252;
+        se toman las corridas legibles de las dos codificaciones y se queda la que más letras/dígitos ASCII aporta.
+        Los fines de celda de tabla de Word (0x07) se convierten en ' | ' para conservar las columnas."""
+        chars = rb"\x20-\x7E\xA0-\xFE\t\r\n\x07\x0b\x0c"
+        runs16 = [m.group(0).decode("utf-16-le", "ignore") for m in re.finditer(rb"(?:[" + chars + rb"]\x00){4,}", data)]
+        runs8 = [m.group(0).decode("cp1252", "ignore") for m in re.finditer(rb"[" + chars + rb"]{4,}", data)]
+
+        def score(txt):
+            return sum(1 for c in txt if c.isascii() and c.isalnum())
+
+        def clean(runs):
+            out = []
+            for r in runs:
+                r = r.replace("\x07", " | ").replace("\r", "\n").replace("\x0b", "\n").replace("\x0c", "\n").strip()
+                dense = len("".join(r.split()))  # sin espacios: las columnas alineadas con espacios no penalizan
+                if len(r) >= 4 and score(r) >= max(3, dense * 0.5):
+                    out.append(r)
+            return out
+
+        a, b = clean(runs8), clean(runs16)
+        best = b if sum(map(score, b)) >= sum(map(score, a)) else a
+        return "\n".join(best)
+
+    def _document_blocks(self, data_b64, mimetype, filename):
+        """Bloques de contenido para la API según el tipo de archivo: PDF, imagen o Word (.docx)."""
         mimetype = (mimetype or "").lower()
         ext = (filename or "").lower().rsplit(".", 1)[-1]
         if mimetype == "application/pdf" or ext == "pdf":
-            return {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": data_b64}}
-        if mimetype in ("image/jpeg", "image/png", "image/webp", "image/gif") or ext in ("jpg", "jpeg", "png", "webp", "gif"):
-            mt = mimetype if mimetype.startswith("image/") else {"jpg": "image/jpeg", "jpeg": "image/jpeg"}.get(ext, "image/" + ext)
-            return {"type": "image", "source": {"type": "base64", "media_type": mt, "data": data_b64}}
-        raise UserError(_("Formato no soportado: %s. Subí un PDF o una foto (JPG/PNG).", filename))
+            return [{"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": data_b64}}]
+        if mimetype in self.IMAGE_TYPES.values() or ext in self.IMAGE_TYPES:
+            mt = mimetype if mimetype.startswith("image/") else self.IMAGE_TYPES[ext]
+            return [{"type": "image", "source": {"type": "base64", "media_type": mt, "data": data_b64}}]
+        if ext == "docx" or mimetype == "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            try:
+                text, images = self._docx_to_text(base64.b64decode(data_b64))
+            except (zipfile.BadZipFile, KeyError, etree.XMLSyntaxError) as e:
+                raise UserError(_("No se pudo leer el Word %s: %s", filename, e)) from e
+            if not text and not images:
+                raise UserError(_("El Word %s no tiene texto ni imágenes.", filename))
+            blocks = []
+            if text:
+                blocks.append({"type": "text", "text": _("Contenido del documento Word '%s' (texto extraído; las tablas van fila por fila con ' | ' entre columnas):\n\n%s", filename, text[:200000])})
+            blocks.extend(images)
+            return blocks
+        if ext == "doc" or mimetype == "application/msword":
+            text = self._doc_to_text(base64.b64decode(data_b64))
+            if len(text) < 20:
+                raise UserError(_("No se pudo extraer texto del Word %s: guardalo como .docx o PDF y volvé a subirlo.", filename))
+            return [{"type": "text", "text": _("Contenido del documento Word 97-2003 '%s' (texto extraído; el formato se pierde, las celdas de tabla van separadas por ' | '):\n\n%s", filename, text[:200000])}]
+        raise UserError(_("Formato no soportado: %s. Subí un PDF, una foto (JPG/PNG) o un Word (.docx).", filename))
 
     def extract_invoice(self, data_b64, mimetype, filename, extra_hint=""):
         """Devuelve (dict con el esquema registrar_factura, info de uso)."""
         key, model = self._config()
-        content = [self._document_block(data_b64, mimetype, filename), {
+        content = self._document_blocks(data_b64, mimetype, filename) + [{
             "type": "text",
             "text": "Leé esta factura de proveedor y registrala con la herramienta registrar_factura." + (" " + extra_hint if extra_hint else ""),
         }]

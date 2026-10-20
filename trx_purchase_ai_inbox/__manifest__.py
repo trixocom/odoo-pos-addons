@@ -1,8 +1,8 @@
 {
     "name": "Compras - Facturas de proveedor escaneadas con IA",
-    "version": "19.0.1.2.0",
+    "version": "19.0.1.3.0",
     "category": "Inventory/Purchase",
-    "summary": "Sube la factura del proveedor (PDF o foto), la lee con Claude, reconoce los artículos "
+    "summary": "Sube la factura del proveedor (PDF, foto o Word), la lee con IA, reconoce los artículos "
     "(EAN → código del proveedor → alfa), calcula el costo neto real y arma la orden de compra.",
     "description": """
 Facturas de proveedor escaneadas
@@ -12,7 +12,7 @@ Compras → Pedidos → Facturas recibidas (IA).
 
 * **Entrada**: PDF o foto de la factura, para la razón social que compra (se detecta por el
   CUIT receptor si está impreso).
-* **Lectura**: Claude (API de Anthropic) devuelve un esquema con cabecera (CUIT emisor y
+* **Lectura**: la IA (API de Anthropic) devuelve un esquema con cabecera (CUIT emisor y
   receptor, tipo y número, fecha, CAE, totales), líneas (código del proveedor, EAN13 si está
   impreso, descripción, cantidad, precio, descuento de línea, IVA), descuentos globales al pie,
   otros cargos y percepciones. Nada se inventa: lo que no está impreso queda vacío.

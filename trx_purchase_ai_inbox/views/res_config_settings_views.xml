@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//app[@name='purchase']" position="inside">
                 <block title="Facturas de proveedor escaneadas (IA)" name="trx_ai_inbox_block">
-                    <setting string="Lectura con Claude" help="API key de Anthropic y modelo usados para leer las facturas (PDF o foto).">
+                    <setting string="Lectura con IA" help="API key de Anthropic y modelo usados para leer las facturas (PDF, foto o Word).">
                         <div class="row mt8">
                             <label for="trx_ai_inbox_api_key" class="col-lg-4 o_light_label"/>
                             <field name="trx_ai_inbox_api_key" password="True"/>

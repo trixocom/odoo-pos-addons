@@ -66,12 +66,19 @@ class TrxPurchaseInboxLine(models.Model):
         for l in self:
             l.ean_valid = _ean_valid(l.ean or "")
 
-    @api.depends("price_printed", "discount_line_pct", "inbox_id.global_discount_pct", "inbox_id.prices_include_tax", "tax_rate")
+    @api.depends("price_printed", "discount_line_pct", "inbox_id.global_discount_pct", "inbox_id.prices_include_tax", "tax_rate",
+                 "inbox_id.non_fiscal", "inbox_id.amount_tax_printed")
     def _compute_price_net(self):
         for l in self:
-            net = (l.price_printed or 0.0) * (1 - (l.discount_line_pct or 0.0) / 100.0) * (1 - (l.inbox_id.global_discount_pct or 0.0) / 100.0)
+            inbox = l.inbox_id
+            net = (l.price_printed or 0.0) * (1 - (l.discount_line_pct or 0.0) / 100.0) * (1 - (inbox.global_discount_pct or 0.0) / 100.0)
             l.price_net = net
-            l.price_net_untaxed = net / (1 + (l.tax_rate or 0.0) / 100.0) if l.inbox_id.prices_include_tax else net
+            if inbox.non_fiscal:
+                # no fiscal: no hay crédito de IVA, el costo es lo que se paga (con IVA sólo si el papel lo suma aparte)
+                add_tax = not inbox.prices_include_tax and inbox.amount_tax_printed
+                l.price_net_untaxed = net * (1 + (l.tax_rate or 0.0) / 100.0) if add_tax else net
+            else:
+                l.price_net_untaxed = net / (1 + (l.tax_rate or 0.0) / 100.0) if inbox.prices_include_tax else net
 
     @api.depends("price_net_untaxed", "cost_current")
     def _compute_price_up(self):

@@ -1,6 +1,10 @@
 # Part of trx_purchase_ai_inbox. Author: Trixocom. License: LGPL-3.
 """Pruebas sin API: se simula el resultado de la lectura y se verifica el prorrateo del descuento
 global, el reconocimiento por EAN / código de proveedor, el control de totales y la OC."""
+import base64
+import io
+import zipfile
+
 from odoo.tests import TransactionCase, tagged
 
 
@@ -157,6 +161,66 @@ class TestPurchaseAiInbox(TransactionCase):
         self.assertTrue(perc.tax_id)
         self.assertEqual(perc.tax_id.tax_group_id.l10n_ar_tribute_afip_code, "07")
         self.assertIn("CABA", perc.tax_id.tax_group_id.with_context(lang="en_US").name)
+
+    def test_docx_blocks(self):
+        """Word (.docx): párrafos y tablas → bloque de texto para la IA; .doc → error claro."""
+        ns = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+        xml = ('<w:document xmlns:w="%s"><w:body><w:p><w:r><w:t>FACTURA A 0001-00000123</w:t></w:r></w:p>'
+               '<w:tbl><w:tr><w:tc><w:p><w:r><w:t>DFZ07837</w:t></w:r></w:p></w:tc><w:tc><w:p><w:r><w:t>AGUA WOW /24</w:t></w:r></w:p></w:tc>'
+               '<w:tc><w:p><w:r><w:t>6199.00</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>') % ns
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("word/document.xml", xml)
+        client = self.env["trx.purchase.ai.client"]
+        blocks = client._document_blocks(base64.b64encode(buf.getvalue()).decode(), "", "pedido.docx")
+        self.assertEqual(blocks[0]["type"], "text")
+        self.assertIn("FACTURA A 0001-00000123", blocks[0]["text"])
+        self.assertIn("DFZ07837 | AGUA WOW /24 | 6199.00", blocks[0]["text"])
+        with self.assertRaises(Exception):
+            client._document_blocks("", "application/msword", "viejo.doc")
+        self.assertEqual(client._document_blocks("eA==", "application/pdf", "f.pdf")[0]["type"], "document")
+
+    def test_non_fiscal_quote(self):
+        """Presupuesto / factura no fiscal: OC y factura sin IVA, factura en el diario NF sin documentos (se crea si no existe)."""
+        data = dict(self.data)
+        data["comprobante"] = {"tipo": "SOLICITUD DE PEDIDO/PRESUPUESTO", "letra": "", "numero": "0000200005695", "fecha": "2026-10-10"}
+        data["lineas"] = [dict(self.data["lineas"][0]), dict(self.data["lineas"][1])]
+        data["descuentos_globales"] = [{"descripcion": "DTO.%", "porcentaje": 10, "importe": 0}]
+        data["totales"] = {"neto_gravado": 225.0, "iva": 0.0, "total": 225.0}   # (200 + 50) − 10 %, sin IVA
+        self.inbox._apply_result(data, {})
+        self.assertTrue(self.inbox.non_fiscal)
+        self.assertNotEqual(self.inbox.state, "rejected")
+        self.assertAlmostEqual(self.inbox.amount_tax_calc, 0.0, places=2)
+        self.assertTrue(self.inbox.totals_ok)
+        self.assertAlmostEqual(self.inbox.line_ids.sorted("sequence")[0].price_net_untaxed, 90.0, places=4)
+        self.inbox.action_create_po()
+        po = self.inbox.purchase_id
+        self.assertEqual(po.state, "purchase")
+        self.assertFalse(po.order_line.tax_ids)
+        self.assertAlmostEqual(po.amount_total, 225.0, places=2)
+        self.assertTrue(po.partner_ref.startswith("NF "))
+        self.inbox.action_create_bill()
+        move = self.inbox.invoice_id
+        self.assertEqual(move.journal_id.type, "purchase")
+        self.assertFalse(move.journal_id.l10n_latam_use_documents)
+        self.assertFalse(move.l10n_latam_document_type_id)
+        self.assertAlmostEqual(move.amount_tax, 0.0, places=2)
+        self.assertAlmostEqual(move.amount_total, 225.0, places=2)
+        self.assertEqual(move.invoice_line_ids.mapped("purchase_line_id"), po.order_line)
+        # el diario NF se reutiliza
+        self.assertEqual(self.env["trx.purchase.inbox"]._get_nf_purchase_journal(self.company), move.journal_id)
+
+    def test_non_fiscal_with_printed_vat(self):
+        """No fiscal que suma IVA aparte: sin crédito fiscal, el IVA va al costo."""
+        data = dict(self.data)
+        data["comprobante"] = {"tipo": "PRESUPUESTO", "letra": "", "numero": "77"}
+        data["lineas"] = [dict(self.data["lineas"][1])]
+        data["descuentos_globales"] = []
+        data["totales"] = {"neto_gravado": 50.0, "iva": 10.5, "total": 60.5}
+        self.inbox._apply_result(data, {})
+        self.assertTrue(self.inbox.non_fiscal)
+        self.assertAlmostEqual(self.inbox.line_ids.price_net_untaxed, 60.5, places=4)
+        self.assertTrue(self.inbox.totals_ok)
 
     def test_prices_with_tax_included(self):
         data = dict(self.data)

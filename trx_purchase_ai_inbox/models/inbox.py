@@ -58,7 +58,7 @@ class TrxPurchaseInbox(models.Model):
     company_id = fields.Many2one("res.company", string="Razón social que compra", required=True,
                                  default=lambda self: self.env.company, tracking=True)
     currency_id = fields.Many2one(related="company_id.currency_id")
-    file = fields.Binary(string="Factura (PDF o foto)", attachment=True, copy=False)
+    file = fields.Binary(string="Factura (PDF, foto o Word)", attachment=True, copy=False)
     file_name = fields.Char(string="Archivo", copy=False)
     state = fields.Selection(STATES, default="draft", required=True, tracking=True, copy=False, index=True)
     reject_reason = fields.Char(string="Motivo de rechazo", readonly=True, copy=False)
@@ -78,6 +78,9 @@ class TrxPurchaseInbox(models.Model):
     cae_due = fields.Date(string="Vto. CAE", readonly=True)
     prices_include_tax = fields.Boolean(string="Precios con IVA incluido", readonly=True,
                                         help="Facturas B y C: los precios impresos son finales.")
+    non_fiscal = fields.Boolean(string="Comprobante no fiscal (NF)", tracking=True,
+                                help="Presupuesto, pedido o factura no fiscal pagada en efectivo: la orden de compra y la factura van sin IVA "
+                                     "y la factura se registra en el diario de compras NF, que no maneja documentos (no se informa a ARCA).")
     global_discount_pct = fields.Float(string="Descuento global %", digits=(16, 4), readonly=True,
                                        help="Bonificación al pie, prorrateada sobre las líneas (suma de % y de importes).")
     global_discount_desc = fields.Char(string="Descuentos al pie", readonly=True)
@@ -109,11 +112,12 @@ class TrxPurchaseInbox(models.Model):
     invoice_id = fields.Many2one("account.move", string="Factura de proveedor", readonly=True, copy=False)
     note = fields.Text(string="Notas")
 
-    @api.depends("line_ids.price_net_untaxed", "line_ids.qty", "line_ids.tax_rate", "perception_ids.amount", "other_charges", "amount_total_printed")
+    @api.depends("line_ids.price_net_untaxed", "line_ids.qty", "line_ids.tax_rate", "perception_ids.amount", "other_charges",
+                 "amount_total_printed", "non_fiscal")
     def _compute_calc(self):
         for rec in self:
             untaxed = sum(l.qty * l.price_net_untaxed for l in rec.line_ids)
-            tax = sum(l.qty * l.price_net_untaxed * (l.tax_rate or 0.0) / 100.0 for l in rec.line_ids)
+            tax = 0.0 if rec.non_fiscal else sum(l.qty * l.price_net_untaxed * (l.tax_rate or 0.0) / 100.0 for l in rec.line_ids)
             perceptions = sum(rec.perception_ids.mapped("amount"))
             rec.amount_perceptions = perceptions
             total = untaxed + tax + perceptions + (rec.other_charges or 0.0)
@@ -226,6 +230,14 @@ class TrxPurchaseInbox(models.Model):
                     return p
         return Partner
 
+    QUOTE_KEYWORDS = ("PRESUPUESTO", "COTIZ", "PEDIDO", "PROFORMA", "ORDEN")
+
+    def _is_quote(self):
+        """Presupuesto, solicitud de pedido, proforma: sirve para la OC pero no es un comprobante fiscal."""
+        self.ensure_one()
+        tipo = (self.doc_type or "").upper()
+        return any(k in tipo for k in self.QUOTE_KEYWORDS) and "FACTURA" not in tipo
+
     def _apply_result(self, data, info):
         self.ensure_one()
         prov, comp, rec_ = data.get("proveedor") or {}, data.get("comprobante") or {}, data.get("receptor") or {}
@@ -337,7 +349,10 @@ class TrxPurchaseInbox(models.Model):
             })
         self.line_ids._match_products()
         self.line_ids._snapshot_current()
+        self.non_fiscal = self._is_quote() or (not self.doc_letter and not self.cae)
         self.state = "review" if (self.count_new or not self.totals_ok) else "scanned"
+        if self.non_fiscal:
+            self.message_post(body=_("Comprobante no fiscal (%s): la orden de compra y la factura van sin IVA y la factura se registra en el diario de compras NF, sin documento ni ARCA.", self.doc_type or "-"))
         self.message_post(body=_(
             "Factura leída (%s): %s líneas, %s reconocidas, %s a resolver; descuento global %s %%; total impreso %s, calculado %s (diferencia %s).",
             self.ai_model or "", self.line_count, self.count_matched, self.count_new, round(self.global_discount_pct, 2),
@@ -371,12 +386,13 @@ class TrxPurchaseInbox(models.Model):
             raise UserError(_("Hay %s líneas sin artículo. Elegí el artículo o usá 'Incorporar' para crearlos.", len(unresolved)))
         company = self.company_id
         PO = self.env["purchase.order"].with_company(company)
-        ref = ("%s %s %s" % (self.doc_type or "FACTURA", self.doc_letter or "", self.doc_number or "")).strip()
+        ref = ("%s%s %s %s" % ("NF " if self.non_fiscal else "", self.doc_type or "FACTURA", self.doc_letter or "", self.doc_number or "")).strip()
+        ref = re.sub(r"\s+", " ", ref)
         if ref and PO.search_count([("partner_ref", "=", ref), ("partner_id", "=", self.partner_id.id), ("company_id", "=", company.id)]):
             raise UserError(_("Ya existe una orden de compra con la referencia %s para este proveedor.", ref))
         lines_vals = []
         for l in self.line_ids:
-            tax = self._find_purchase_tax(l.tax_rate)
+            tax = self.env["account.tax"] if self.non_fiscal else self._find_purchase_tax(l.tax_rate)
             lines_vals.append((0, 0, {
                 "product_id": l.product_id.id,
                 "name": "[%s] %s" % (l.supplier_code, l.description) if l.supplier_code else l.description,
@@ -468,12 +484,20 @@ class TrxPurchaseInbox(models.Model):
                 raise UserError(_("No encuentro impuesto para: %s. Elegilo a mano en la pestaña Percepciones.", ", ".join(missing.mapped("description"))))
         company = self.company_id
         Move = self.env["account.move"].with_company(company)
-        journal = self.env["account.journal"].search([("company_id", "=", company.id), ("type", "=", "purchase"), ("l10n_latam_use_documents", "=", True)], limit=1) \
-            or self.env["account.journal"].search([("company_id", "=", company.id), ("type", "=", "purchase")], limit=1)
+        if self.non_fiscal:
+            journal = self._get_nf_purchase_journal(company)
+        else:
+            journal = self.env["account.journal"].search([("company_id", "=", company.id), ("type", "=", "purchase"), ("l10n_latam_use_documents", "=", True)], limit=1) \
+                or self.env["account.journal"].search([("company_id", "=", company.id), ("type", "=", "purchase")], limit=1)
         if not journal:
             raise UserError(_("La compañía %s no tiene diario de compras.", company.name))
         doc_type, is_credit = self._find_document_type(journal)
-        if self.doc_number and journal.l10n_latam_use_documents and doc_type:
+        if self.non_fiscal:
+            doc_type = self.env["l10n_latam.document.type"]
+            dup = Move.search([("journal_id", "=", journal.id), ("partner_id", "=", self.partner_id.commercial_partner_id.id), ("ref", "=", po.partner_ref)], limit=1) if po.partner_ref else Move
+            if dup:
+                raise UserError(_("Ya existe la factura no fiscal %s de este proveedor: %s.", po.partner_ref, dup.display_name))
+        if not self.non_fiscal and self.doc_number and journal.l10n_latam_use_documents and doc_type:
             dup = Move.search([("partner_id", "=", self.partner_id.commercial_partner_id.id), ("company_id", "=", company.id), ("move_type", "in", ("in_invoice", "in_refund")),
                                ("l10n_latam_document_type_id", "=", doc_type.id), ("name", "=like", "%" + self.doc_number)], limit=1)
             if dup:
@@ -498,7 +522,8 @@ class TrxPurchaseInbox(models.Model):
         move = Move.create(vals)
         if not move.invoice_date_due:
             move._compute_invoice_date_due()
-        self._apply_perceptions(move)
+        if not self.non_fiscal:
+            self._apply_perceptions(move)
         self.invoice_id = move
         move.message_post(body=_("Generada desde la factura escaneada %s (archivo %s). Percepciones: %s. Total impreso %s, factura %s.",
                                  self.name, self.file_name or "", "; ".join("%s $ %s" % (p.tax_id.name, p.amount) for p in self.perception_ids) or "-",
@@ -511,6 +536,25 @@ class TrxPurchaseInbox(models.Model):
                                  move.display_name, round(move.amount_total, 2), self.amount_total_printed,
                                  ", ".join("%s $ %s" % (p.tax_id.name, p.amount) for p in self.perception_ids) or "ninguna"))
         return self.action_view_bill()
+
+    def _get_nf_purchase_journal(self, company):
+        """Diario de compras no fiscal (NF): no maneja documentos, así no se asocia a tipos de comprobante ni a ARCA.
+        Si no existe se crea, con la misma cuenta por defecto que el diario de compras fiscal."""
+        Journal = self.env["account.journal"].sudo().with_company(company)
+        domain = [("company_id", "=", company.id), ("type", "=", "purchase"), ("l10n_latam_use_documents", "=", False)]
+        journal = Journal.search(domain + [("code", "=", "NF")], limit=1) or Journal.search(domain, order="id", limit=1)
+        if journal:
+            return journal
+        fiscal = Journal.search([("company_id", "=", company.id), ("type", "=", "purchase")], order="id", limit=1)
+        codes = set(Journal.with_context(active_test=False).search([("company_id", "=", company.id)]).mapped("code"))
+        code = next(c for c in ("NF", "CNF", "NFC", "NF2", "NF3") if c not in codes)
+        journal = Journal.create({
+            "name": _("Compras NF (no fiscal)"), "code": code, "type": "purchase", "company_id": company.id,
+            "l10n_latam_use_documents": False,
+            "default_account_id": fiscal.default_account_id.id if fiscal.default_account_id else False,
+        })
+        self.message_post(body=_("Se creó el diario de compras no fiscal %s (%s), sin documentos ni ARCA.", journal.name, journal.code))
+        return journal
 
     def _apply_perceptions(self, move):
         """Agrega cada impuesto de percepción a la primera línea y fija el importe impreso en el apunte del impuesto
