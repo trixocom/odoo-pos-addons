@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_pos_cash_move_reason_user,pos.cash.move.reason user,model_pos_cash_move_reason,point_of_sale.group_pos_user,1,0,0,0
+access_pos_cash_move_reason_manager,pos.cash.move.reason manager,model_pos_cash_move_reason,point_of_sale.group_pos_manager,1,1,1,1
+access_pos_cash_move_reason_account_manager,pos.cash.move.reason account manager,model_pos_cash_move_reason,account.group_account_manager,1,1,1,1
+access_pos_cash_move_reason_account_readonly,pos.cash.move.reason account readonly,model_pos_cash_move_reason,account.group_account_readonly,1,0,0,0
+access_pos_cash_move_wizard_user,pos.cash.move.wizard user,model_pos_cash_move_wizard,point_of_sale.group_pos_user,1,1,1,0

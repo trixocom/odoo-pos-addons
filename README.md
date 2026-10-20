@@ -9,6 +9,7 @@ subcarpeta vive un módulo independiente.
 |---|---|---|
 | `pos_financial_surcharge` | 19.0.1.1.0 | Recargo / descuento financiero por forma de pago en POS. Basado en `card_installment` de ADHOC. |
 | `pos_promotions` | 19.0.1.0.0 | Promociones en POS: descuento de la casa (línea negativa única) + reintegro del banco informado en el ticket + nota de crédito fiscal automática (CAE) por el importe de la devolución, en la misma transacción. Depende de `l10n_ar_pos_edi`. |
+| `trx_pos_cash_move_reason` | 19.0.1.0.0 | Motivos de entrada/salida de efectivo en POS con imputación directa a la cuenta contable del motivo (sin pasar por la transitoria del diario). Selector en el popup del POS, opción de exigir motivo, entrada/salida desde la sesión en el backend y reporte de movimientos de caja. |
 
 ## Dependencia externa
 

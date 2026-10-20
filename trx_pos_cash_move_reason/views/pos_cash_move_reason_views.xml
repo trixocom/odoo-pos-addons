@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_cash_move_reason_list" model="ir.ui.view">
+        <field name="name">pos.cash.move.reason.list</field>
+        <field name="model">pos.cash.move.reason</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="is_income_reason"/>
+                <field name="income_account_id"/>
+                <field name="is_expense_reason"/>
+                <field name="expense_account_id"/>
+                <field name="pos_config_ids" widget="many2many_tags" optional="show"/>
+                <field name="company_id" groups="base.group_multi_company" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_pos_cash_move_reason_form" model="ir.ui.view">
+        <field name="name">pos.cash.move.reason.form</field>
+        <field name="model">pos.cash.move.reason</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_statement_lines" type="object"
+                                class="oe_stat_button" icon="fa-money">
+                            <field name="statement_line_count" widget="statinfo" string="Cash Moves"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Bank deposit"/></h1>
+                    </div>
+                    <group>
+                        <group string="Cash In" name="cash_in">
+                            <field name="is_income_reason"/>
+                            <field name="income_account_id"
+                                   invisible="not is_income_reason"
+                                   required="is_income_reason"/>
+                        </group>
+                        <group string="Cash Out" name="cash_out">
+                            <field name="is_expense_reason"/>
+                            <field name="expense_account_id"
+                                   invisible="not is_expense_reason"
+                                   required="is_expense_reason"/>
+                        </group>
+                    </group>
+                    <group name="availability">
+                        <field name="pos_config_ids" widget="many2many_tags"
+                               placeholder="All points of sale"/>
+                        <field name="company_id" groups="base.group_multi_company"/>
+                        <field name="sequence" groups="base.group_no_one"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_pos_cash_move_reason_search" model="ir.ui.view">
+        <field name="name">pos.cash.move.reason.search</field>
+        <field name="model">pos.cash.move.reason</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="income_account_id"/>
+                <field name="expense_account_id"/>
+                <filter name="filter_in" string="Cash In" domain="[('is_income_reason', '=', True)]"/>
+                <filter name="filter_out" string="Cash Out" domain="[('is_expense_reason', '=', True)]"/>
+                <separator/>
+                <filter name="inactive" string="Archived" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_pos_cash_move_reason" model="ir.actions.act_window">
+        <field name="name">Cash In/Out Reasons</field>
+        <field name="res_model">pos.cash.move.reason</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create a cash in/out reason</p>
+            <p>Each reason books the cash moves of the point of sale directly against
+                its accounts: expenses paid from the till, bank deposits, owner
+                contributions, change funds, etc.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_pos_cash_move_reason"
+              parent="point_of_sale.menu_point_config_product"
+              action="action_pos_cash_move_reason"
+              sequence="4"
+              groups="point_of_sale.group_pos_manager"/>
+</odoo>

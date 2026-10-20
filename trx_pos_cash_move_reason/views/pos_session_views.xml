@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_pos_session_form" model="ir.ui.view">
+        <field name="name">pos.session.form.trx_pos_cash_move_reason</field>
+        <field name="model">pos.session</field>
+        <field name="inherit_id" ref="point_of_sale.view_pos_session_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="before">
+                <field name="cash_control" invisible="1"/>
+                <button name="action_trx_cash_move" type="object" string="Cash In"
+                        context="{'trx_cash_move_type': 'in'}"
+                        invisible="not cash_control or state not in ('opened', 'closing_control')"
+                        groups="point_of_sale.group_pos_manager,account.group_account_invoice"/>
+                <button name="action_trx_cash_move" type="object" string="Cash Out"
+                        context="{'trx_cash_move_type': 'out'}"
+                        invisible="not cash_control or state not in ('opened', 'closing_control')"
+                        groups="point_of_sale.group_pos_manager,account.group_account_invoice"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

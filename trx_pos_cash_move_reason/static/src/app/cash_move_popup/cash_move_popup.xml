@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="trx_pos_cash_move_reason.CashMovePopup" t-inherit="point_of_sale.CashMovePopup" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('form-floating')]" position="before">
+            <div class="form-floating mb-2" t-if="trxReasons.length">
+                <select class="form-select trx-cash-reason" id="trx_cash_reason" name="trx_cash_reason"
+                        t-model="state.trxReasonId">
+                    <option value="" t-if="trxReasonRequired">Select a reason</option>
+                    <option value="" t-else="">No reason</option>
+                    <t t-foreach="trxReasons" t-as="trxReason" t-key="trxReason.id">
+                        <option t-att-value="trxReason.id" t-esc="trxReason.name"/>
+                    </t>
+                </select>
+                <label for="trx_cash_reason">Cash in/out reason</label>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('form-floating')]/label[@for='reason']" position="replace">
+            <label for="reason">
+                <t t-if="trxSelectedReason">Note (optional)</t>
+                <t t-else="">Reason</t>
+            </label>
+        </xpath>
+    </t>
+</templates>

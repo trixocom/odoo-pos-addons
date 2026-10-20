@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.trx_pos_cash_move_reason</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='set_maximum_difference']" position="after">
+                <setting id="trx_cash_reason_required"
+                         string="Cash In/Out Reasons"
+                         help="Cashiers must pick a reason for every cash in/out; each reason posts directly to its account">
+                    <field name="pos_trx_cash_reason_required"/>
+                    <div class="mt8">
+                        <button name="%(trx_pos_cash_move_reason.action_pos_cash_move_reason)d"
+                                type="action" string="Reasons" icon="oi-arrow-right"
+                                class="btn-link"/>
+                    </div>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,446 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* trx_pos_cash_move_reason
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-10-20 16:02+0000\n"
+"PO-Revision-Date: 2026-10-20 16:02+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/wizards/pos_cash_move_wizard.py:0
+msgid "%(type)s of %(amount)s registered from the backend. Reason: %(reason)s"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__active
+msgid "Active"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+msgid "All points of sale"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__amount
+msgid "Amount"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_search
+msgid "Archived"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__available_reason_ids
+msgid "Available Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_account_bank_statement_line
+msgid "Bank Statement Line"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_session.py:0
+#: code:addons/trx_pos_cash_move_reason/wizards/pos_cash_move_wizard.py:0
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__is_income_reason
+#: model:ir.model.fields.selection,name:trx_pos_cash_move_reason.selection__pos_cash_move_wizard__move_type__in
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_search
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_session_form
+msgid "Cash In"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__income_account_id
+msgid "Cash In Account"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_account_bank_statement_line__pos_cash_move_reason_id
+msgid "Cash In/Out Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.actions.act_window,name:trx_pos_cash_move_reason.action_pos_cash_move_reason
+#: model:ir.ui.menu,name:trx_pos_cash_move_reason.menu_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.res_config_settings_view_form
+msgid "Cash In/Out Reasons"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.actions.act_window,name:trx_pos_cash_move_reason.action_pos_cash_move_lines
+#: model:ir.ui.menu,name:trx_pos_cash_move_reason.menu_pos_cash_move_lines
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+msgid "Cash Moves"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_session.py:0
+#: code:addons/trx_pos_cash_move_reason/wizards/pos_cash_move_wizard.py:0
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__is_expense_reason
+#: model:ir.model.fields.selection,name:trx_pos_cash_move_reason.selection__pos_cash_move_wizard__move_type__out
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_search
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_session_form
+msgid "Cash Out"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__expense_account_id
+msgid "Cash Out Account"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-javascript
+#: code:addons/trx_pos_cash_move_reason/static/src/app/cash_move_popup/cash_move_popup.xml:0
+msgid "Cash in/out reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/wizards/pos_cash_move_wizard.py:0
+msgid "Cash moves can only be registered on an open session."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_list
+msgid "Cashier"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.res_config_settings_view_form
+msgid ""
+"Cashiers must pick a reason for every cash in/out; each reason posts "
+"directly to its account"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__company_id
+msgid "Company"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_wizard_form
+msgid "Confirm"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__account_id
+msgid "Counterpart Account"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_cash_move_reason__income_account_id
+msgid ""
+"Counterpart account of the journal entry when money is put into the cash "
+"register with this reason."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_cash_move_reason__expense_account_id
+msgid ""
+"Counterpart account of the journal entry when money is taken out of the cash"
+" register with this reason."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.actions.act_window,help:trx_pos_cash_move_reason.action_pos_cash_move_reason
+msgid "Create a cash in/out reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__create_uid
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__create_date
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+msgid "Date"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_wizard_form
+msgid "Discard"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_account_bank_statement_line__display_name
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__display_name
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__display_name
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_config__display_name
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_session__display_name
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_res_config_settings__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.actions.act_window,help:trx_pos_cash_move_reason.action_pos_cash_move_reason
+msgid ""
+"Each reason books the cash moves of the point of sale directly against\n"
+"                its accounts: expenses paid from the till, bank deposits, owner\n"
+"                contributions, change funds, etc."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_account_bank_statement_line__id
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__id
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__id
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_config__id
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_session__id
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_res_config_settings__id
+msgid "ID"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__write_uid
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__write_date
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_account_bank_statement_line__trx_pos_cash_move
+msgid "Line created by a cash in/out of a point of sale session."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__move_type
+msgid "Move Type"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__name
+msgid "Name"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-javascript
+#: code:addons/trx_pos_cash_move_reason/static/src/app/cash_move_popup/cash_move_popup.xml:0
+msgid "No reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__note
+msgid "Note"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-javascript
+#: code:addons/trx_pos_cash_move_reason/static/src/app/cash_move_popup/cash_move_popup.xml:0
+msgid "Note (optional)"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_wizard_form
+msgid "Optional details"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_account_bank_statement_line__trx_pos_cash_move
+msgid "PoS Cash In/Out"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_pos_cash_move_reason
+msgid "PoS Cash In/Out Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_pos_cash_move_wizard
+msgid "PoS Cash In/Out from the backend"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_pos_config
+msgid "Point of Sale Configuration"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model,name:trx_pos_cash_move_reason.model_pos_session
+msgid "Point of Sale Session"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__pos_config_ids
+msgid "Points of Sale"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_cash_move_reason__pos_config_ids
+msgid ""
+"Points of sale where the reason is available. Leave empty to make it "
+"available in every point of sale of the company."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-javascript
+#: code:addons/trx_pos_cash_move_reason/static/src/app/cash_move_popup/cash_move_popup.xml:0
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__reason_id
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+msgid "Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.res_config_settings_view_form
+msgid "Reasons"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_config__trx_cash_reason_required
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_res_config_settings__pos_trx_cash_reason_required
+msgid "Require Cash In/Out Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-javascript
+#: code:addons/trx_pos_cash_move_reason/static/src/app/cash_move_popup/cash_move_popup.xml:0
+msgid "Select a reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_session.py:0
+msgid "Select a reason for the cash in."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_session.py:0
+msgid "Select a reason for the cash out."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_wizard__session_id
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+msgid "Session"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,field_description:trx_pos_cash_move_reason.field_pos_cash_move_reason__statement_line_count
+msgid "Statement Line Count"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/wizards/pos_cash_move_wizard.py:0
+msgid "The amount must be greater than zero."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %(reason)s can not be used for a cash in at %(pos)s."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %(reason)s can not be used for a cash out at %(pos)s."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %s has no account for this kind of cash move."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %s is used for cash in: set its Cash In Account."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %s is used for cash out: set its Cash Out Account."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_cash_move_reason.py:0
+msgid "The reason %s must be usable for cash in, cash out or both."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_cash_move_reason__is_income_reason
+msgid "The reason can be used to put money into the cash register."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_cash_move_reason__is_expense_reason
+msgid "The reason can be used to take money out of the cash register."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#. odoo-python
+#: code:addons/trx_pos_cash_move_reason/models/pos_session.py:0
+msgid "The selected cash in/out reason no longer exists."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_list
+msgid "Total"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_pos_config__trx_cash_reason_required
+#: model:ir.model.fields,help:trx_pos_cash_move_reason.field_res_config_settings__pos_trx_cash_reason_required
+msgid ""
+"When reasons are available for the kind of cash move, the cashier must "
+"select one. The free text becomes an optional note."
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_line_search
+msgid "Without Reason"
+msgstr ""
+
+#. module: trx_pos_cash_move_reason
+#: model_terms:ir.ui.view,arch_db:trx_pos_cash_move_reason.view_pos_cash_move_reason_form
+msgid "e.g. Bank deposit"
+msgstr ""
