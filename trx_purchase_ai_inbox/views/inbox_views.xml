@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_purchase_inbox_form" model="ir.ui.view">
+        <field name="name">trx.purchase.inbox.form</field>
+        <field name="model">trx.purchase.inbox</field>
+        <field name="arch" type="xml">
+            <form string="Factura de proveedor">
+                <header>
+                    <button name="action_scan" type="object" string="Leer factura" class="btn-primary"
+                            invisible="state in ('done',) or not file"/>
+                    <button name="action_create_products" type="object" string="Incorporar artículos nuevos"
+                            invisible="state not in ('scanned', 'review') or count_new == 0"
+                            confirm="Se crean los artículos de las líneas no reconocidas (alfa automático del proveedor, EAN si es válido, costo = neto de la factura). ¿Continuar?"/>
+                    <button name="action_create_po" type="object" string="Generar orden de compra" class="btn-primary"
+                            invisible="state not in ('scanned', 'review') or purchase_id"/>
+                    <button name="action_view_po" type="object" string="Ver orden de compra" invisible="not purchase_id"/>
+                    <button name="action_create_bill" type="object" string="Generar factura de proveedor" class="btn-primary"
+                            invisible="not purchase_id or invoice_id"
+                            confirm="Se genera la factura de proveedor en borrador, vinculada a la orden de compra, con las percepciones cargadas como impuestos. ¿Continuar?"/>
+                    <button name="action_view_bill" type="object" string="Ver factura" invisible="not invoice_id"/>
+                    <button name="action_reject" type="object" string="Rechazar" invisible="state in ('done', 'rejected')"/>
+                    <button name="action_reset" type="object" string="Volver a nueva" invisible="state not in ('rejected', 'review', 'scanned')"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,scanned,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_pickings" icon="fa-truck" invisible="picking_count == 0">
+                            <field name="picking_count" widget="statinfo" string="Recepciones"/>
+                        </button>
+                    </div>
+                    <div class="alert alert-danger" role="alert" invisible="not reject_reason">
+                        <field name="reject_reason" readonly="1" nolabel="1"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="state not in ('scanned', 'review') or totals_ok">
+                        Los totales no cierran: total impreso <field name="amount_total_printed" readonly="1" class="oe_inline"/>, calculado <field name="amount_total_calc" readonly="1" class="oe_inline"/> (diferencia <field name="amount_diff" readonly="1" class="oe_inline"/>). Revisá las líneas, descuentos y percepciones; la orden de compra quedará en borrador.
+                    </div>
+                    <div class="alert alert-warning" role="alert" invisible="perception_count == 0 or invoice_id">
+                        La factura trae <field name="perception_count" readonly="1" class="oe_inline"/> percepción(es) por <field name="amount_perceptions" readonly="1" class="oe_inline"/>: se cargan como impuestos en la factura de proveedor (pestaña Percepciones), no en la orden de compra.
+                    </div>
+                    <div class="alert alert-info" role="alert" invisible="count_price_up == 0">
+                        <field name="count_price_up" readonly="1" class="oe_inline"/> artículo(s) vinieron más caros que el último costo (ver columna "Subió").
+                    </div>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group string="Factura">
+                            <field name="file" filename="file_name" readonly="state == 'done'"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="company_id" readonly="state == 'done'" options="{'no_create': True}"/>
+                            <field name="partner_id" readonly="state == 'done'" options="{'no_create': True}"/>
+                            <field name="partner_created" invisible="not partner_created"/>
+                            <field name="purchase_id" invisible="not purchase_id"/>
+                            <field name="invoice_id" invisible="not invoice_id"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                        <group string="Datos leídos">
+                            <field name="issuer_name"/>
+                            <field name="issuer_vat"/>
+                            <field name="receiver_name"/>
+                            <field name="receiver_vat"/>
+                            <field name="doc_type"/>
+                            <field name="doc_letter"/>
+                            <field name="doc_number"/>
+                            <field name="invoice_date"/>
+                            <field name="invoice_date_due"/>
+                            <field name="cae"/>
+                            <field name="cae_due"/>
+                            <field name="prices_include_tax"/>
+                        </group>
+                        <group string="Totales impresos">
+                            <field name="amount_untaxed_printed"/>
+                            <field name="amount_tax_printed"/>
+                            <field name="amount_perceptions"/>
+                            <field name="perceptions_desc" invisible="not perceptions_desc"/>
+                            <field name="other_charges"/>
+                            <field name="other_charges_desc" invisible="not other_charges_desc"/>
+                            <field name="amount_total_printed"/>
+                        </group>
+                        <group string="Calculado desde las líneas">
+                            <field name="global_discount_pct"/>
+                            <field name="global_discount_desc" invisible="not global_discount_desc"/>
+                            <field name="amount_untaxed_calc"/>
+                            <field name="amount_tax_calc"/>
+                            <field name="amount_total_calc"/>
+                            <field name="amount_diff"/>
+                            <field name="totals_ok" widget="boolean_toggle" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Líneas" name="lines">
+                            <field name="line_ids" readonly="state in ('done', 'rejected')">
+                                <list editable="bottom" default_order="sequence, id"
+                                      decoration-info="match_state == 'new'" decoration-warning="match_state == 'suggested'"
+                                      decoration-danger="price_up">
+                                    <field name="sequence" column_invisible="1"/>
+                                    <field name="inbox_state" column_invisible="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="supplier_code"/>
+                                    <field name="ean"/>
+                                    <field name="ean_valid" column_invisible="1"/>
+                                    <field name="description"/>
+                                    <field name="product_id" options="{'no_create': True}"/>
+                                    <field name="match_state" widget="badge" decoration-success="match_state == 'matched'"
+                                           decoration-info="match_state == 'new'" decoration-warning="match_state == 'suggested'"/>
+                                    <field name="match_by" optional="hide"/>
+                                    <field name="qty"/>
+                                    <field name="uom_text" optional="hide"/>
+                                    <field name="price_printed"/>
+                                    <field name="discount_line_pct" optional="show"/>
+                                    <field name="tax_rate"/>
+                                    <field name="price_net" optional="hide"/>
+                                    <field name="price_net_untaxed"/>
+                                    <field name="cost_current"/>
+                                    <field name="price_up_pct" widget="percentage" digits="[16,1]" string="Var."/>
+                                    <field name="price_up" string="Subió" widget="boolean_toggle" readonly="1"/>
+                                    <field name="amount_printed" optional="hide"/>
+                                    <field name="extra" optional="hide"/>
+                                    <field name="source_text" optional="hide"/>
+                                    <button name="action_create_product" type="object" icon="fa-plus-square" title="Incorporar (crear el artículo)"
+                                            invisible="match_state == 'matched' or inbox_state in ('done', 'rejected')"/>
+                                    <button name="action_confirm_suggested" type="object" icon="fa-check" title="Confirmar el artículo sugerido"
+                                            invisible="match_state != 'suggested'"/>
+                                    <button name="action_open_product" type="object" icon="fa-external-link" title="Abrir artículo"
+                                            invisible="not product_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Percepciones" name="perceptions">
+                            <field name="perception_ids" readonly="invoice_id">
+                                <list editable="bottom" decoration-danger="not tax_id" decoration-success="tax_state == 'created'">
+                                    <field name="sequence" column_invisible="1"/>
+                                    <field name="company_id" column_invisible="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="inbox_state" column_invisible="1"/>
+                                    <field name="description"/>
+                                    <field name="kind"/>
+                                    <field name="jurisdiction"/>
+                                    <field name="rate" optional="show"/>
+                                    <field name="base" optional="hide"/>
+                                    <field name="amount" sum="Total"/>
+                                    <field name="tax_id" options="{'no_create': True}" context="{'active_test': False}"/>
+                                    <field name="tax_state" widget="badge" decoration-success="tax_state in ('found', 'activated')" decoration-info="tax_state == 'created'" decoration-danger="tax_state == 'missing'"/>
+                                    <button name="action_resolve_tax" type="object" icon="fa-magic" title="Buscar / activar / crear el impuesto" invisible="tax_id"/>
+                                </list>
+                            </field>
+                            <p class="text-muted">Las percepciones impresas (IVA, Ganancias, IIBB por provincia, municipales) no son artículos: van a la factura de proveedor como impuestos con el importe impreso. Si el impuesto existe se usa; si está archivado se activa; si no existe se crea copiando uno de la misma clase.</p>
+                        </page>
+                        <page string="Lectura" name="ai">
+                            <group>
+                                <field name="ai_model"/>
+                                <field name="ai_usage"/>
+                                <field name="ai_notes"/>
+                            </group>
+                            <field name="ai_raw" widget="ace" options="{'mode': 'json'}"/>
+                        </page>
+                        <page string="Notas" name="notes"><field name="note"/></page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_trx_purchase_inbox_list" model="ir.ui.view">
+        <field name="name">trx.purchase.inbox.list</field>
+        <field name="model">trx.purchase.inbox</field>
+        <field name="arch" type="xml">
+            <list string="Facturas recibidas" decoration-muted="state == 'rejected'" decoration-warning="state == 'review'">
+                <field name="name"/>
+                <field name="create_date" string="Recibida"/>
+                <field name="company_id"/>
+                <field name="partner_id"/>
+                <field name="doc_number"/>
+                <field name="invoice_date"/>
+                <field name="amount_total_printed"/>
+                <field name="line_count" string="Líneas"/>
+                <field name="count_new" string="Sin artículo"/>
+                <field name="totals_ok" string="Cierra"/>
+                <field name="amount_perceptions" string="Percep." optional="show"/>
+                <field name="purchase_id"/>
+                <field name="invoice_id" optional="show"/>
+                <field name="state" widget="badge" decoration-success="state == 'done'" decoration-warning="state == 'review'" decoration-info="state == 'scanned'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_purchase_inbox_search" model="ir.ui.view">
+        <field name="name">trx.purchase.inbox.search</field>
+        <field name="model">trx.purchase.inbox</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="doc_number"/>
+                <field name="issuer_vat"/>
+                <filter name="pending" string="Pendientes" domain="[('state', 'in', ('draft', 'scanned', 'review'))]"/>
+                <filter name="done" string="Con OC" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter name="group_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                <filter name="group_company" string="Razón social" context="{'group_by': 'company_id'}"/>
+                <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_trx_purchase_inbox" model="ir.actions.act_window">
+        <field name="name">Facturas recibidas (IA)</field>
+        <field name="res_model">trx.purchase.inbox</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_trx_purchase_inbox_search"/>
+        <field name="context">{'search_default_pending': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Subí la factura de un proveedor</p>
+            <p>PDF o foto. Se lee sola, reconoce los artículos, calcula el costo neto real y arma la orden de compra.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_trx_purchase_inbox" name="Facturas recibidas (IA)" parent="purchase.menu_procurement_management"
+              action="action_trx_purchase_inbox" sequence="5" groups="purchase.group_purchase_user"/>
+</odoo>
