@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_purchase_inbox_form_wa" model="ir.ui.view">
+        <field name="name">trx.purchase.inbox.form.wa</field>
+        <field name="model">trx.purchase.inbox</field>
+        <field name="inherit_id" ref="trx_purchase_ai_inbox.view_trx_purchase_inbox_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='fetchmail_server_id']" position="after">
+                <field name="wa_account_id" invisible="not wa_account_id"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

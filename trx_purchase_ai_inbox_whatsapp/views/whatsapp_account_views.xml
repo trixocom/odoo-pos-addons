@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_whatsapp_account_form_trx_ai_inbox" model="ir.ui.view">
+        <field name="name">whatsapp.account.form.trx.ai.inbox</field>
+        <field name="model">whatsapp.account</field>
+        <field name="inherit_id" ref="trixo_whatsapp.view_whatsapp_account_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='notify_user_ids']" position="after">
+                <field name="trx_ai_inbox" widget="boolean_toggle"/>
+                <field name="trx_ai_inbox_count" invisible="not trx_ai_inbox"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_account_list_trx_ai_inbox" model="ir.ui.view">
+        <field name="name">whatsapp.account.list.trx.ai.inbox</field>
+        <field name="model">whatsapp.account</field>
+        <field name="inherit_id" ref="trixo_whatsapp.view_whatsapp_account_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="trx_ai_inbox" string="Comprobantes" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

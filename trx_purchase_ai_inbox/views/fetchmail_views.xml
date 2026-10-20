@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_email_server_form_trx_ai_inbox" model="ir.ui.view">
+        <field name="name">fetchmail.server.form.trx.ai.inbox</field>
+        <field name="model">fetchmail.server</field>
+        <field name="inherit_id" ref="mail.view_email_server_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='object_id']" position="before">
+                <field name="trx_ai_inbox" widget="boolean_toggle"/>
+            </xpath>
+            <xpath expr="//field[@name='object_id']" position="attributes">
+                <attribute name="invisible">trx_ai_inbox</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_email_server_tree_trx_ai_inbox" model="ir.ui.view">
+        <field name="name">fetchmail.server.list.trx.ai.inbox</field>
+        <field name="model">fetchmail.server</field>
+        <field name="inherit_id" ref="mail.view_email_server_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='server_type']" position="after">
+                <field name="trx_ai_inbox" string="Comprobantes"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

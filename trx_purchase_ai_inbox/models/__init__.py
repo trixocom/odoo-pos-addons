@@ -3,4 +3,6 @@ from . import ai_client
 from . import inbox
 from . import inbox_line
 from . import inbox_perception
+from . import inbox_channels
+from . import fetchmail
 from . import res_config_settings

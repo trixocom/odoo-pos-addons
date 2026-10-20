@@ -4,7 +4,7 @@
         <field name="name">trx.purchase.inbox.form</field>
         <field name="model">trx.purchase.inbox</field>
         <field name="arch" type="xml">
-            <form string="Factura de proveedor">
+            <form string="Comprobante de proveedor">
                 <header>
                     <button name="action_scan" type="object" string="Leer factura" class="btn-primary"
                             invisible="state in ('done',) or not file"
@@ -35,6 +35,9 @@
                             <field name="picking_count" widget="statinfo" string="Recepciones"/>
                         </button>
                     </div>
+                    <div class="alert alert-warning" role="alert" invisible="not scan_error or state != 'draft'">
+                        <b>No se pudo leer</b> (<field name="scan_attempts" readonly="1" class="oe_inline"/> intento/s): <field name="scan_error" readonly="1" nolabel="1"/>
+                    </div>
                     <div class="alert alert-danger" role="alert" invisible="not reject_reason">
                         <field name="reject_reason" readonly="1" nolabel="1"/>
                     </div>
@@ -53,6 +56,12 @@
                     <div class="oe_title"><h1><field name="name"/></h1></div>
                     <group>
                         <group string="Factura">
+                            <field name="source"/>
+                            <field name="source_ref" invisible="source == 'manual'"/>
+                            <field name="source_subject" invisible="not source_subject"/>
+                            <field name="fetchmail_server_id" invisible="not fetchmail_server_id"/>
+                            <field name="received_date"/>
+                            <field name="duplicate_of_id" invisible="not duplicate_of_id"/>
                             <field name="file" filename="file_name" readonly="state == 'done'"/>
                             <field name="file_name" invisible="1"/>
                             <field name="company_id" readonly="state == 'done'" options="{'no_create': True}"/>
@@ -178,9 +187,15 @@
         <field name="name">trx.purchase.inbox.list</field>
         <field name="model">trx.purchase.inbox</field>
         <field name="arch" type="xml">
-            <list string="Facturas recibidas" decoration-muted="state == 'rejected'" decoration-warning="state == 'review'">
+            <list string="Bandeja de comprobantes" decoration-muted="state == 'rejected'" decoration-warning="state == 'review'">
+                <header>
+                    <button name="action_scan_selected" type="object" string="Leer seleccionados"
+                            context="{'trx_busy': 'Leyendo comprobantes con IA', 'trx_busy_sub': 'Se leen uno por uno; los que no se puedan leer quedan marcados.', 'trx_busy_icon': 'fa-magic'}"/>
+                </header>
                 <field name="name"/>
-                <field name="create_date" string="Recibida"/>
+                <field name="received_date"/>
+                <field name="source" widget="badge" decoration-info="source == 'email'" decoration-success="source == 'whatsapp'"/>
+                <field name="source_ref" optional="show"/>
                 <field name="company_id"/>
                 <field name="picking_type_id" optional="show"/>
                 <field name="partner_id"/>
@@ -209,29 +224,37 @@
                 <field name="partner_id"/>
                 <field name="doc_number"/>
                 <field name="issuer_vat"/>
+                <field name="source_ref"/>
                 <filter name="pending" string="Pendientes" domain="[('state', 'in', ('draft', 'scanned', 'review'))]"/>
+                <filter name="unread" string="Sin leer" domain="[('state', '=', 'draft')]"/>
+                <filter name="scan_failed" string="Con error de lectura" domain="[('scan_error', '!=', False), ('state', '=', 'draft')]"/>
+                <separator/>
+                <filter name="src_manual" string="Carga manual" domain="[('source', '=', 'manual')]"/>
+                <filter name="src_email" string="Por correo" domain="[('source', '=', 'email')]"/>
+                <filter name="src_whatsapp" string="Por WhatsApp" domain="[('source', '=', 'whatsapp')]"/>
                 <filter name="done" string="Con OC" domain="[('state', '=', 'done')]"/>
                 <filter name="nf" string="No fiscales" domain="[('non_fiscal', '=', True)]"/>
                 <separator/>
                 <filter name="group_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
                 <filter name="group_company" string="Razón social" context="{'group_by': 'company_id'}"/>
                 <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                <filter name="group_source" string="Origen" context="{'group_by': 'source'}"/>
             </search>
         </field>
     </record>
 
     <record id="action_trx_purchase_inbox" model="ir.actions.act_window">
-        <field name="name">Facturas recibidas (IA)</field>
+        <field name="name">Bandeja de comprobantes</field>
         <field name="res_model">trx.purchase.inbox</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_trx_purchase_inbox_search"/>
         <field name="context">{'search_default_pending': 1}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Subí la factura de un proveedor</p>
-            <p>PDF, foto (JPG/PNG) o Word (.docx). Se lee sola con IA, reconoce los artículos, calcula el costo neto real y arma la orden de compra.</p>
+            <p class="o_view_nocontent_smiling_face">Bandeja de comprobantes de proveedor</p>
+            <p>Facturas, presupuestos y comprobantes no fiscales: subilos a mano o llegan solos por las casillas de correo y los números de WhatsApp habilitados. PDF, foto o Word. Se leen con IA, se reconocen los artículos, se calcula el costo neto real y se arma la orden de compra.</p>
         </field>
     </record>
 
-    <menuitem id="menu_trx_purchase_inbox" name="Facturas recibidas (IA)" parent="purchase.menu_procurement_management"
+    <menuitem id="menu_trx_purchase_inbox" name="Bandeja de comprobantes" parent="purchase.menu_procurement_management"
               action="action_trx_purchase_inbox" sequence="5" groups="purchase.group_purchase_user"/>
 </odoo>

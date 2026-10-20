@@ -1,6 +1,6 @@
 {
     "name": "Compras - Facturas de proveedor escaneadas con IA",
-    "version": "19.0.1.4.2",
+    "version": "19.0.1.5.0",
     "category": "Inventory/Purchase",
     "summary": "Sube la factura del proveedor (PDF, foto o Word), la lee con IA, reconoce los artículos "
     "(EAN → código del proveedor → alfa), calcula el costo neto real y arma la orden de compra.",
@@ -8,7 +8,7 @@
 Facturas de proveedor escaneadas
 ================================
 
-Compras → Pedidos → Facturas recibidas (IA).
+Compras → Órdenes → Bandeja de comprobantes (carga manual, casillas de correo y números de WhatsApp habilitados).
 
 * **Entrada**: PDF o foto de la factura, para la razón social que compra (se detecta por el
   CUIT receptor si está impreso).
@@ -37,7 +37,9 @@ Autor: Trixocom.
     "data": [
         "security/ir.model.access.csv",
         "data/data.xml",
+        "data/cron.xml",
         "views/inbox_views.xml",
+        "views/fetchmail_views.xml",
         "views/res_config_settings_views.xml",
     ],
     "installable": True,

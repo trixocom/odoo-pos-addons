@@ -6,7 +6,14 @@
         <field name="inherit_id" ref="purchase.res_config_settings_view_form_purchase"/>
         <field name="arch" type="xml">
             <xpath expr="//app[@name='purchase']" position="inside">
-                <block title="Facturas de proveedor escaneadas (IA)" name="trx_ai_inbox_block">
+                <block title="Bandeja de comprobantes de proveedor (IA)" name="trx_ai_inbox_block">
+                    <setting string="Entrada por correo y WhatsApp"
+                             help="Marcá en cada casilla de correo entrante y en cada número de WhatsApp si sus comprobantes entran a la bandeja.">
+                        <field name="trx_ai_inbox_auto_scan"/>
+                        <div class="mt8">
+                            <button name="%(mail.action_email_server_tree)d" type="action" string="Casillas de correo" icon="oi-arrow-right" class="btn-link"/>
+                        </div>
+                    </setting>
                     <setting string="Lectura con IA" help="API key de Anthropic y modelo usados para leer las facturas (PDF, foto o Word).">
                         <div class="row mt8">
                             <label for="trx_ai_inbox_api_key" class="col-lg-4 o_light_label"/>
