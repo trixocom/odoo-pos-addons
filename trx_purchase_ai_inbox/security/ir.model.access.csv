@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_trx_purchase_inbox_user,trx.purchase.inbox.user,model_trx_purchase_inbox,purchase.group_purchase_user,1,1,1,0
+access_trx_purchase_inbox_line_user,trx.purchase.inbox.line.user,model_trx_purchase_inbox_line,purchase.group_purchase_user,1,1,1,1
+access_trx_purchase_inbox_manager,trx.purchase.inbox.manager,model_trx_purchase_inbox,purchase.group_purchase_manager,1,1,1,1
+access_trx_purchase_inbox_line_manager,trx.purchase.inbox.line.manager,model_trx_purchase_inbox_line,purchase.group_purchase_manager,1,1,1,1
+access_trx_purchase_inbox_perception_user,trx.purchase.inbox.perception.user,model_trx_purchase_inbox_perception,purchase.group_purchase_user,1,1,1,1
+access_trx_purchase_inbox_perception_manager,trx.purchase.inbox.perception.manager,model_trx_purchase_inbox_perception,purchase.group_purchase_manager,1,1,1,1
