@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="trx_web_busy_overlay.Overlay">
+        <div t-if="state.visible" class="trx-busy-backdrop" role="status" aria-live="polite">
+            <div class="trx-busy-card">
+                <div class="trx-busy-head">
+                    <span class="trx-busy-icon"><i t-attf-class="fa {{ state.icon }}"/></span>
+                    <div class="trx-busy-text">
+                        <div class="trx-busy-title" t-out="state.title"/>
+                        <div class="trx-busy-subtitle" t-if="state.subtitle" t-out="state.subtitle"/>
+                    </div>
+                </div>
+                <div class="trx-busy-bar"><div class="trx-busy-bar-fill"/></div>
+                <div class="trx-busy-foot">
+                    <span class="trx-busy-phase" t-out="phase or 'Procesando…'"/>
+                    <span class="trx-busy-clock"><i class="fa fa-clock-o me-1"/><t t-out="elapsed"/></span>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

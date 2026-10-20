@@ -305,12 +305,19 @@ class TrxPurchaseInbox(models.Model):
             if not _num(p.get("importe")):
                 continue
             kind, jurisdiction = classify(p.get("descripcion"), p.get("tipo"), p.get("jurisdiccion"))
+            guessed, why = False, ""
+            if kind == "iibb" and not jurisdiction:
+                jurisdiction, why = Perception._guess_jurisdiction(self.partner_id, self.company_id)
+                guessed = bool(jurisdiction)
             Perception.create({
                 "inbox_id": self.id, "sequence": seq,
                 "description": (p.get("descripcion") or "").strip() or dict(KINDS)[kind],
-                "kind": kind, "jurisdiction": jurisdiction,
+                "kind": kind, "jurisdiction": jurisdiction, "jurisdiction_guessed": guessed,
                 "rate": _num(p.get("alicuota")), "base": _num(p.get("base")), "amount": _num(p.get("importe")),
             })
+            if guessed:
+                self.message_post(body=_("Percepción '%s': la factura no dice la provincia; se tomó %s (%s). Corregila en la pestaña Percepciones si no es esa.",
+                                         (p.get("descripcion") or "").strip(), jurisdiction, why))
         self.perception_ids.action_resolve_tax()
         Line = self.env["trx.purchase.inbox.line"]
         for seq, l in enumerate(lines, start=1):

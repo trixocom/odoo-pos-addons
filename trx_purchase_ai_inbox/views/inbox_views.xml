@@ -7,15 +7,19 @@
             <form string="Factura de proveedor">
                 <header>
                     <button name="action_scan" type="object" string="Leer factura" class="btn-primary"
-                            invisible="state in ('done',) or not file"/>
+                            invisible="state in ('done',) or not file"
+                            context="{'trx_busy': 'Leyendo la factura con IA', 'trx_busy_sub': 'Se envía el archivo a Claude y se reconocen los artículos. Suele tardar entre 15 y 60 segundos: no cierres la pestaña.', 'trx_busy_icon': 'fa-magic', 'trx_busy_phases': ['Enviando el archivo…', 'Leyendo el comprobante…', 'Extrayendo líneas, descuentos y percepciones…', 'Reconociendo artículos y precios…', 'Casi listo…']}"/>
                     <button name="action_create_products" type="object" string="Incorporar artículos nuevos"
                             invisible="state not in ('scanned', 'review') or count_new == 0"
+                            context="{'trx_busy': 'Incorporando artículos', 'trx_busy_sub': 'Alta de artículos, códigos alfa, EAN y precios de proveedor.', 'trx_busy_icon': 'fa-cubes'}"
                             confirm="Se crean los artículos de las líneas no reconocidas (alfa automático del proveedor, EAN si es válido, costo = neto de la factura). ¿Continuar?"/>
                     <button name="action_create_po" type="object" string="Generar orden de compra" class="btn-primary"
-                            invisible="state not in ('scanned', 'review') or purchase_id"/>
+                            invisible="state not in ('scanned', 'review') or purchase_id"
+                            context="{'trx_busy': 'Generando la orden de compra', 'trx_busy_sub': 'Precios netos, IVA, confirmación y actualización de precios de proveedor.', 'trx_busy_icon': 'fa-shopping-cart'}"/>
                     <button name="action_view_po" type="object" string="Ver orden de compra" invisible="not purchase_id"/>
                     <button name="action_create_bill" type="object" string="Generar factura de proveedor" class="btn-primary"
                             invisible="not purchase_id or invoice_id"
+                            context="{'trx_busy': 'Generando la factura de proveedor', 'trx_busy_sub': 'Factura en borrador vinculada a la orden, con las percepciones como impuestos.', 'trx_busy_icon': 'fa-file-text-o'}"
                             confirm="Se genera la factura de proveedor en borrador, vinculada a la orden de compra, con las percepciones cargadas como impuestos. ¿Continuar?"/>
                     <button name="action_view_bill" type="object" string="Ver factura" invisible="not invoice_id"/>
                     <button name="action_reject" type="object" string="Rechazar" invisible="state in ('done', 'rejected')"/>
@@ -126,7 +130,7 @@
                         </page>
                         <page string="Percepciones" name="perceptions">
                             <field name="perception_ids" readonly="invoice_id">
-                                <list editable="bottom" decoration-danger="not tax_id" decoration-success="tax_state == 'created'">
+                                <list editable="bottom" decoration-danger="not tax_id" decoration-warning="jurisdiction_guessed" decoration-success="tax_state == 'created'">
                                     <field name="sequence" column_invisible="1"/>
                                     <field name="company_id" column_invisible="1"/>
                                     <field name="currency_id" column_invisible="1"/>
@@ -134,6 +138,7 @@
                                     <field name="description"/>
                                     <field name="kind"/>
                                     <field name="jurisdiction"/>
+                                    <field name="jurisdiction_guessed" string="Jur. supuesta" widget="boolean_toggle" readonly="1" optional="show"/>
                                     <field name="rate" optional="show"/>
                                     <field name="base" optional="hide"/>
                                     <field name="amount" sum="Total"/>
@@ -142,7 +147,7 @@
                                     <button name="action_resolve_tax" type="object" icon="fa-magic" title="Buscar / activar / crear el impuesto" invisible="tax_id"/>
                                 </list>
                             </field>
-                            <p class="text-muted">Las percepciones impresas (IVA, Ganancias, IIBB por provincia, municipales) no son artículos: van a la factura de proveedor como impuestos con el importe impreso. Si el impuesto existe se usa; si está archivado se activa; si no existe se crea copiando uno de la misma clase.</p>
+                            <p class="text-muted">Las percepciones impresas (IVA, Ganancias, IIBB por provincia, municipales) no son artículos: van a la factura de proveedor como impuestos con el importe impreso. Si el impuesto existe se usa; si está archivado se activa; si no existe se crea copiando uno de la misma clase. Si la factura no dice la provincia de la percepción de IIBB, se toma la última usada con ese proveedor o la del domicilio de la compañía (fila en amarillo): corregí la jurisdicción y apretá la varita si no es esa.</p>
                         </page>
                         <page string="Lectura" name="ai">
                             <group>
@@ -150,7 +155,7 @@
                                 <field name="ai_usage"/>
                                 <field name="ai_notes"/>
                             </group>
-                            <field name="ai_raw" widget="ace" options="{'mode': 'json'}"/>
+                            <field name="ai_raw" widget="ace" options="{'mode': 'javascript'}"/>
                         </page>
                         <page string="Notas" name="notes"><field name="note"/></page>
                     </notebook>

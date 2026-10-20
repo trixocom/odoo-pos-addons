@@ -21,8 +21,9 @@ KINDS = [
 
 # jurisdicción IIBB → nombre del grupo de impuestos de l10n_ar ("Perc IIBB <x>")
 JURISDICTIONS = [
-    ("P. Buenos Aires", ("buenos aires", "bs as", "bs. as", "pba", "pcia", "provincia", "arba", "bsas")),
+    # CABA antes que Buenos Aires: "Ciudad Autónoma de Buenos Aires" contiene "buenos aires"
     ("CABA", ("caba", "capital", "ciudad", "agip", "c.a.b.a", "ciudad autonoma")),
+    ("P. Buenos Aires", ("buenos aires", "bs as", "bs. as", "pba", "pcia", "provincia", "arba", "bsas")),
     ("Córdoba", ("cordoba",)),
     ("Santa Fe", ("santa fe", "api ")),
     ("Mendoza", ("mendoza",)),
@@ -90,6 +91,8 @@ class TrxPurchaseInboxPerception(models.Model):
     description = fields.Char(string="Texto impreso", required=True)
     kind = fields.Selection(KINDS, string="Tipo", required=True, default="otro")
     jurisdiction = fields.Char(string="Jurisdicción", help="Provincia para IIBB (tal como la nombra l10n_ar: 'P. Buenos Aires', 'CABA', 'Córdoba'...).")
+    jurisdiction_guessed = fields.Boolean(string="Jurisdicción supuesta", readonly=True,
+                                          help="La factura no dice la provincia: se tomó la última usada con el proveedor o la del domicilio de la compañía.")
     rate = fields.Float(string="Alícuota %", digits=(16, 4))
     base = fields.Monetary(string="Base impresa", currency_field="currency_id")
     amount = fields.Monetary(string="Importe", currency_field="currency_id", required=True)
@@ -101,6 +104,30 @@ class TrxPurchaseInboxPerception(models.Model):
         ("created", "Impuesto creado"),
         ("missing", "Sin impuesto"),
     ], string="Impuesto", default="missing", readonly=True)
+
+    @api.onchange("jurisdiction")
+    def _onchange_jurisdiction(self):
+        for rec in self:
+            rec.jurisdiction_guessed = False
+            if rec.kind == "iibb":
+                rec.tax_id = False
+                rec.tax_state = "missing"
+
+    @api.model
+    def _guess_jurisdiction(self, partner, company):
+        """IIBB sin provincia impresa: la última percepción IIBB cargada a ese proveedor; si no, la provincia
+        del domicilio de la compañía (la percepción se practica por la jurisdicción del comprador); si no, la del proveedor."""
+        if partner:
+            prev = self.search([("inbox_id.partner_id", "=", partner.id), ("kind", "=", "iibb"), ("jurisdiction", "!=", False), ("tax_id", "!=", False)],
+                               order="id desc", limit=1)
+            if prev:
+                return prev.jurisdiction, _("última usada con %s", partner.name)
+        for rec, why in ((company.partner_id, _("domicilio de %s", company.name)), (partner, _("domicilio del proveedor"))):
+            if rec and rec.state_id and (rec.state_id.country_id.code or "AR") == "AR":
+                _kind, jur = classify("IIBB " + rec.state_id.name)
+                if jur:
+                    return jur, why
+        return False, ""
 
     @api.onchange("tax_id")
     def _onchange_tax_id(self):

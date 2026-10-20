@@ -139,6 +139,25 @@ class TestPurchaseAiInbox(TransactionCase):
         self.assertAlmostEqual(move.amount_total, 283.50, places=2)
         self.assertEqual(self.inbox.purchase_id.invoice_ids, move)
 
+    def test_perception_iibb_without_province(self):
+        """'ING.BRUTOS 4%' sin provincia → jurisdicción del domicilio de la compañía (CABA), marcada como supuesta."""
+        caba = self.env["res.country.state"].search([("country_id.code", "=", "AR"), ("code", "=", "C")], limit=1)
+        self.assertTrue(caba)
+        self.company.partner_id.state_id = caba
+        data = dict(self.data)
+        data["lineas"] = [dict(self.data["lineas"][1])]
+        data["descuentos_globales"] = []
+        data["percepciones"] = [{"descripcion": "Percepciones Realizadas sobre la factura 902 ING.BRUTOS 4.00", "tipo": "iibb", "alicuota": 4, "importe": 2.0}]
+        data["totales"] = {"neto_gravado": 50.0, "iva": 10.5, "percepciones": 2.0, "total": 62.5}
+        self.inbox._apply_result(data, {})
+        perc = self.inbox.perception_ids
+        self.assertEqual(perc.kind, "iibb")
+        self.assertEqual(perc.jurisdiction, "CABA")
+        self.assertTrue(perc.jurisdiction_guessed)
+        self.assertTrue(perc.tax_id)
+        self.assertEqual(perc.tax_id.tax_group_id.l10n_ar_tribute_afip_code, "07")
+        self.assertIn("CABA", perc.tax_id.tax_group_id.with_context(lang="en_US").name)
+
     def test_prices_with_tax_included(self):
         data = dict(self.data)
         data["comprobante"] = dict(self.data["comprobante"], letra="B")

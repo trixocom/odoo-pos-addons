@@ -1,6 +1,6 @@
 {
     "name": "Compras - Facturas de proveedor escaneadas con IA",
-    "version": "19.0.1.1.0",
+    "version": "19.0.1.2.0",
     "category": "Inventory/Purchase",
     "summary": "Sube la factura del proveedor (PDF o foto), la lee con Claude, reconoce los artículos "
     "(EAN → código del proveedor → alfa), calcula el costo neto real y arma la orden de compra.",
@@ -32,7 +32,7 @@ Autor: Trixocom.
     "author": "Trixocom",
     "website": "https://www.trixocom.com",
     "license": "LGPL-3",
-    "depends": ["purchase", "account", "l10n_ar", "mail", "trx_product_price_history", "trx_supplier_pricelist_revision"],
+    "depends": ["purchase", "account", "l10n_ar", "mail", "trx_web_busy_overlay", "trx_product_price_history", "trx_supplier_pricelist_revision"],
     "external_dependencies": {"python": ["requests"]},
     "data": [
         "security/ir.model.access.csv",
