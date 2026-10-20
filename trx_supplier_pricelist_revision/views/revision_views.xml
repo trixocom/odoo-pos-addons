@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_supplier_pricelist_revision_form" model="ir.ui.view">
+        <field name="name">trx.supplier.pricelist.revision.form</field>
+        <field name="model">trx.supplier.pricelist.revision</field>
+        <field name="arch" type="xml">
+            <form string="Lista de proveedor">
+                <header>
+                    <button name="action_load_file" type="object" string="Cargar líneas del archivo" class="btn-primary"
+                            invisible="state not in ('draft', 'review') or not file"
+                            confirm="Se vuelven a generar las líneas desde el archivo (se pierden las decisiones ya tomadas). ¿Continuar?"/>
+                    <button name="action_recompute" type="object" string="Reconocer y recalcular"
+                            invisible="state != 'review'"
+                            help="Vuelve a reconocer artículos, toma los costos y PVP vigentes y propone el PVP (respeta los PVP editados a mano)."/>
+                    <button name="action_create_all_new" type="object" string="Incorporar todos los nuevos"
+                            invisible="state not in ('draft', 'review') or count_new == 0"
+                            confirm="Se crean los artículos de TODAS las líneas nuevas con descripción y precio (código alfa automático, PVP propuesto, línea de proveedor). Para elegir cuáles, usá el botón 'Nuevos' y la acción 'Incorporar' sobre la selección. ¿Continuar?"/>
+                    <button name="action_schedule" type="object" string="Programar" class="btn-primary"
+                            invisible="state != 'review'"/>
+                    <button name="action_apply_now" type="object" string="Aplicar ahora"
+                            invisible="state not in ('review', 'scheduled')"
+                            confirm="Se actualizan ahora mismo el precio de proveedor y el PVP de las líneas con decisión 'Aplicar'. ¿Continuar?"/>
+                    <button name="action_back_to_review" type="object" string="Volver a revisión" invisible="state != 'scheduled'"/>
+                    <button name="action_cancel" type="object" string="Cancelar" invisible="state in ('applied', 'cancelled')"/>
+                    <button name="action_draft" type="object" string="Volver a borrador" invisible="state != 'cancelled'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,review,scheduled,applied"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_lines" icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="Líneas"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_up" icon="fa-arrow-up"
+                                invisible="count_up == 0">
+                            <field name="count_up" widget="statinfo" string="Subieron"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_down" icon="fa-arrow-down"
+                                invisible="count_down == 0">
+                            <field name="count_down" widget="statinfo" string="Bajaron"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_equal" icon="fa-minus"
+                                invisible="count_equal == 0">
+                            <field name="count_equal" widget="statinfo" string="Iguales"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_new" icon="fa-plus"
+                                invisible="count_new == 0">
+                            <field name="count_new" widget="statinfo" string="Nuevos"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_suggested" icon="fa-question"
+                                invisible="count_suggested == 0">
+                            <field name="count_suggested" widget="statinfo" string="A confirmar"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_lines_no_pvp" icon="fa-exclamation-triangle"
+                                invisible="count_no_pvp == 0">
+                            <field name="count_no_pvp" widget="statinfo" string="Sin PVP"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Proveedor y archivo">
+                            <field name="partner_id" readonly="state not in ('draft', 'review')" options="{'no_create': True}"/>
+                            <field name="file" filename="file_name" readonly="state not in ('draft', 'review')"/>
+                            <field name="file_name" invisible="1"/>
+                            <field name="date_received" readonly="state not in ('draft', 'review')"/>
+                            <field name="file_sheet" invisible="not file_sheet"/>
+                            <field name="file_columns" invisible="not file_columns"/>
+                        </group>
+                        <group string="Reglas de esta lista">
+                            <field name="discount_pct" readonly="state not in ('draft', 'review')"/>
+                            <field name="pvp_rule" readonly="state not in ('draft', 'review')"/>
+                            <field name="pvp_factor" invisible="pvp_rule not in ('list_factor', 'cost_factor')"
+                                   readonly="state not in ('draft', 'review')"/>
+                            <field name="pvp_rounding" readonly="state not in ('draft', 'review')"/>
+                            <field name="keep_pvp_on_decrease" readonly="state not in ('draft', 'review')"/>
+                        </group>
+                        <group string="Vigencia">
+                            <field name="apply_at" readonly="state not in ('draft', 'review')"
+                                   placeholder="Si se deja vacío: mañana a las 00:00"/>
+                            <field name="applied_at" invisible="not applied_at"/>
+                            <field name="apply_user_id" invisible="not apply_user_id" widget="many2one_avatar_user"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Líneas" name="lines">
+                            <div class="mb-2" invisible="state not in ('draft', 'review') or not line_ids">
+                                <button name="action_recompute_pvp_all" type="object" class="btn btn-link p-0"
+                                        string="Recalcular todos los PVP con la regla de la lista"
+                                        confirm="Se pisan los PVP propuestos editados a mano. ¿Continuar?"/>
+                            </div>
+                            <field name="line_ids" readonly="state not in ('draft', 'review')">
+                                <list editable="bottom" default_order="sequence, id"
+                                      decoration-danger="trend == 'up'" decoration-success="trend == 'down'"
+                                      decoration-info="match_state == 'new'" decoration-warning="match_state in ('suggested', 'unresolved')"
+                                      decoration-muted="decision == 'skip' and match_state == 'matched'">
+                                    <field name="sequence" column_invisible="1"/>
+                                    <field name="revision_state" column_invisible="1"/>
+                                    <field name="trend" column_invisible="1"/>
+                                    <field name="pvp_manual" column_invisible="1"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="supplier_code"/>
+                                    <field name="supplier_name"/>
+                                    <field name="barcode" optional="hide"/>
+                                    <field name="product_tmpl_id" options="{'no_create': True}"/>
+                                    <field name="match_state" widget="badge"
+                                           decoration-success="match_state == 'matched'" decoration-info="match_state == 'new'"
+                                           decoration-warning="match_state in ('suggested', 'unresolved')"/>
+                                    <field name="match_by" optional="hide"/>
+                                    <field name="match_note" optional="hide"/>
+                                    <field name="list_price"/>
+                                    <field name="discount_pct" optional="show"/>
+                                    <field name="cost_current"/>
+                                    <field name="net_cost"/>
+                                    <field name="cost_var_pct" widget="percentage" digits="[16,1]"/>
+                                    <field name="pvp_current"/>
+                                    <field name="pvp_proposed"/>
+                                    <field name="pvp_var_pct" widget="percentage" digits="[16,1]" optional="show"/>
+                                    <field name="pvp_previous" optional="hide"/>
+                                    <field name="suggested_pvp" optional="hide"/>
+                                    <field name="decision"/>
+                                    <field name="state" optional="hide"/>
+                                    <button name="action_create_product" type="object" icon="fa-plus-square" title="Incorporar (crear el artículo)"
+                                            invisible="match_state == 'matched' or revision_state not in ('draft', 'review')"/>
+                                    <button name="action_open_product" type="object" icon="fa-external-link" title="Abrir artículo"
+                                            invisible="not product_tmpl_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Notas" name="notes">
+                            <field name="note" placeholder="Observaciones de esta lista..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_trx_supplier_pricelist_revision_list" model="ir.ui.view">
+        <field name="name">trx.supplier.pricelist.revision.list</field>
+        <field name="model">trx.supplier.pricelist.revision</field>
+        <field name="arch" type="xml">
+            <list string="Listas de proveedor" decoration-muted="state == 'cancelled'" decoration-info="state == 'scheduled'">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="date_received"/>
+                <field name="file_name" optional="show"/>
+                <field name="line_count" string="Líneas"/>
+                <field name="count_up" string="Subieron"/>
+                <field name="count_down" string="Bajaron"/>
+                <field name="count_new" string="Nuevos"/>
+                <field name="apply_at"/>
+                <field name="applied_at" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'applied'" decoration-info="state == 'scheduled'"
+                       decoration-warning="state == 'review'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_supplier_pricelist_revision_search" model="ir.ui.view">
+        <field name="name">trx.supplier.pricelist.revision.search</field>
+        <field name="model">trx.supplier.pricelist.revision</field>
+        <field name="arch" type="xml">
+            <search string="Listas de proveedor">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="file_name"/>
+                <filter name="review" string="En revisión" domain="[('state', '=', 'review')]"/>
+                <filter name="scheduled" string="Programadas" domain="[('state', '=', 'scheduled')]"/>
+                <filter name="applied" string="Aplicadas" domain="[('state', '=', 'applied')]"/>
+                <separator/>
+                <filter name="not_cancelled" string="Activas" domain="[('state', '!=', 'cancelled')]"/>
+                <separator/>
+                    <filter name="group_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by': 'state'}"/>
+                    <filter name="group_month" string="Mes de recepción" context="{'group_by': 'date_received:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_trx_supplier_pricelist_revision" model="ir.actions.act_window">
+        <field name="name">Listas de proveedor</field>
+        <field name="res_model">trx.supplier.pricelist.revision</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_trx_supplier_pricelist_revision_search"/>
+        <field name="context">{'search_default_not_cancelled': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Subí la lista de precios de un proveedor</p>
+            <p>Elegí el proveedor, adjuntá el archivo tal como llegó (Excel o CSV) y tocá "Cargar líneas del archivo".
+               Revisás costo actual / nuevo y PVP propuesto, y programás la fecha y hora en que entran en vigencia.</p>
+        </field>
+    </record>
+</odoo>

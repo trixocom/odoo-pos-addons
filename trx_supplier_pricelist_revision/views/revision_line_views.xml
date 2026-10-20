@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_supplier_pricelist_revision_line_list" model="ir.ui.view">
+        <field name="name">trx.supplier.pricelist.revision.line.list</field>
+        <field name="model">trx.supplier.pricelist.revision.line</field>
+        <field name="arch" type="xml">
+            <list string="Líneas de lista de proveedor" editable="bottom" multi_edit="1" create="false" default_order="sequence, id"
+                  decoration-danger="trend == 'up'" decoration-success="trend == 'down'"
+                  decoration-info="match_state == 'new'" decoration-warning="match_state in ('suggested', 'unresolved')"
+                  decoration-muted="decision == 'skip' and match_state == 'matched'">
+                <field name="sequence" column_invisible="1"/>
+                <field name="revision_state" column_invisible="1"/>
+                <field name="trend" column_invisible="1"/>
+                <field name="pvp_manual" column_invisible="1"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="revision_id" optional="hide" readonly="1"/>
+                <field name="partner_id" optional="hide"/>
+                <field name="supplier_code" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="supplier_name" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="barcode" optional="hide" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="product_tmpl_id" options="{'no_create': True}" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="match_state" widget="badge" readonly="1"
+                       decoration-success="match_state == 'matched'" decoration-info="match_state == 'new'"
+                       decoration-warning="match_state in ('suggested', 'unresolved')"/>
+                <field name="match_by" optional="hide"/>
+                <field name="match_note" optional="hide"/>
+                <field name="list_price" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="discount_pct" optional="show" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="cost_current" readonly="1"/>
+                <field name="net_cost"/>
+                <field name="cost_var_pct" widget="percentage" digits="[16,1]"/>
+                <field name="pvp_current" readonly="1"/>
+                <field name="pvp_proposed" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="pvp_var_pct" widget="percentage" digits="[16,1]" optional="show"/>
+                <field name="pvp_previous" optional="hide"/>
+                <field name="suggested_pvp" optional="hide"/>
+                <field name="decision" readonly="revision_state not in ('draft', 'review')"/>
+                <field name="state" optional="show" readonly="1"/>
+                <button name="action_create_product" type="object" icon="fa-plus-square" title="Incorporar (crear el artículo)"
+                        invisible="match_state == 'matched' or revision_state not in ('draft', 'review')"/>
+                <button name="action_open_product" type="object" icon="fa-external-link" title="Abrir artículo"
+                        invisible="not product_tmpl_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_supplier_pricelist_revision_line_search" model="ir.ui.view">
+        <field name="name">trx.supplier.pricelist.revision.line.search</field>
+        <field name="model">trx.supplier.pricelist.revision.line</field>
+        <field name="arch" type="xml">
+            <search string="Líneas">
+                <field name="supplier_code"/>
+                <field name="supplier_name"/>
+                <field name="barcode"/>
+                <field name="product_tmpl_id"/>
+                <field name="revision_id"/>
+                <field name="partner_id"/>
+                <filter name="up" string="Subieron" domain="[('trend', '=', 'up')]"/>
+                <filter name="down" string="Bajaron" domain="[('trend', '=', 'down')]"/>
+                <filter name="equal" string="Iguales" domain="[('trend', '=', 'equal')]"/>
+                <filter name="new" string="Nuevos" domain="[('match_state', '=', 'new')]"/>
+                <filter name="suggested" string="A confirmar" domain="[('match_state', 'in', ('suggested', 'unresolved'))]"/>
+                <filter name="no_pvp" string="Sin PVP" domain="[('match_state', '=', 'matched'), ('pvp_proposed', '&lt;=', 0)]"/>
+                <separator/>
+                <filter name="apply" string="Decisión: aplicar" domain="[('decision', '=', 'apply')]"/>
+                <filter name="keep_pvp" string="Decisión: mantener PVP" domain="[('decision', '=', 'keep_pvp')]"/>
+                <filter name="skip" string="Decisión: no incorporar" domain="[('decision', '=', 'skip')]"/>
+                <separator/>
+                <filter name="pvp_manual" string="PVP editado a mano" domain="[('pvp_manual', '=', True)]"/>
+                <separator/>
+                    <filter name="group_revision" string="Lista" context="{'group_by': 'revision_id'}"/>
+                    <filter name="group_match" string="Reconocimiento" context="{'group_by': 'match_state'}"/>
+                    <filter name="group_trend" string="Tendencia" context="{'group_by': 'trend'}"/>
+                    <filter name="group_decision" string="Decisión" context="{'group_by': 'decision'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_trx_supplier_pricelist_revision_line" model="ir.actions.act_window">
+        <field name="name">Líneas de listas de proveedor</field>
+        <field name="res_model">trx.supplier.pricelist.revision.line</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_trx_supplier_pricelist_revision_line_search"/>
+    </record>
+
+    <!-- Acciones masivas (menú Acción de la lista) -->
+    <record id="server_action_line_set_apply" model="ir.actions.server">
+        <field name="name">Aplicar costo y PVP</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_set_apply()</field>
+    </record>
+    <record id="server_action_line_set_keep_pvp" model="ir.actions.server">
+        <field name="name">Aplicar costo, mantener PVP</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_set_keep_pvp()</field>
+    </record>
+    <record id="server_action_line_set_skip" model="ir.actions.server">
+        <field name="name">No incorporar</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_set_skip()</field>
+    </record>
+    <record id="server_action_line_lower_pvp" model="ir.actions.server">
+        <field name="name">Bajar el PVP según la regla</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_lower_pvp()</field>
+    </record>
+    <record id="server_action_line_recompute_pvp" model="ir.actions.server">
+        <field name="name">Recalcular PVP con la regla</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_recompute_pvp()</field>
+    </record>
+    <record id="server_action_line_create_product" model="ir.actions.server">
+        <field name="name">Incorporar (crear artículos)</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_create_product()</field>
+    </record>
+    <record id="server_action_line_confirm_suggested" model="ir.actions.server">
+        <field name="name">Confirmar artículo sugerido</field>
+        <field name="model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_model_id" ref="model_trx_supplier_pricelist_revision_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_confirm_suggested()</field>
+    </record>
+</odoo>
