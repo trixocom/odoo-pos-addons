@@ -77,7 +77,7 @@
     </record>
 
     <record id="action_trx_supplier_pricelist_revision_line" model="ir.actions.act_window">
-        <field name="name">Líneas de listas de proveedor</field>
+        <field name="name">Líneas de actualización de precios</field>
         <field name="res_model">trx.supplier.pricelist.revision.line</field>
         <field name="view_mode">list</field>
         <field name="search_view_id" ref="view_trx_supplier_pricelist_revision_line_search"/>

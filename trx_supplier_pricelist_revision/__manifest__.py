@@ -1,6 +1,6 @@
 {
     "name": "Listas de proveedor - Revisión de precios programada",
-    "version": "19.0.1.0.1",
+    "version": "19.0.1.0.2",
     "category": "Inventory/Purchase",
     "summary": "Carga la lista de precios de un proveedor (Excel/CSV tal como llega), muestra costo actual / "
     "nuevo / variación y PVP actual / propuesto, y la aplica en la fecha y hora programadas.",

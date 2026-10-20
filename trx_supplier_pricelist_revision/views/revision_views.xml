@@ -182,7 +182,7 @@
     </record>
 
     <record id="action_trx_supplier_pricelist_revision" model="ir.actions.act_window">
-        <field name="name">Listas de proveedor</field>
+        <field name="name">Actualizar precios por lista</field>
         <field name="res_model">trx.supplier.pricelist.revision</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_trx_supplier_pricelist_revision_search"/>
