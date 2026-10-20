@@ -104,28 +104,39 @@ class TrxPurchaseInboxLine(models.Model):
 
     # ------------------------------------------------------------ reconocer
     def _find_product(self):
+        """Orden fijo: EAN → código del proveedor → código interno → nombre (sólo sugerencia).
+        Si la línea trae un EAN válido, ningún otro criterio puede asociarla a un artículo que tenga OTRO EAN
+        (sería otro artículo). Los artículos archivados sólo se reconocen por EAN, y como sugerencia."""
         self.ensure_one()
-        Product = self.env["product.product"].with_context(active_test=False)
+        Product = self.env["product.product"]
         Seller = self.env["product.supplierinfo"]
         partner = self.inbox_id.partner_id
-        if self.ean and self.ean_valid:
-            prod = Product.search([("barcode", "=", self.ean)], limit=1)
+        ean = self.ean if (self.ean and self.ean_valid) else False
+
+        def compatible(prod):
+            return prod and not (ean and prod.barcode and prod.barcode != ean)
+
+        if ean:
+            prod = Product.search([("barcode", "=", ean)], limit=1)
             if prod:
                 return prod, "matched", "ean"
+            archived = Product.with_context(active_test=False).search([("barcode", "=", ean), ("active", "=", False)], limit=1)
+            if archived:
+                return archived, "suggested", "ean"
         if self.supplier_code and partner:
-            seller = Seller.search([("partner_id", "=", partner.id), ("product_code", "=", self.supplier_code)], limit=1)
-            if seller:
+            sellers = Seller.search([("partner_id", "=", partner.id), ("product_code", "=", self.supplier_code)])
+            for seller in sellers:
                 prod = seller.product_id or seller.product_tmpl_id.product_variant_id
-                if prod:
+                if prod.active and compatible(prod):
                     return prod, "matched", "supplier_code"
         if self.supplier_code:
             prod = Product.search([("default_code", "=", self.supplier_code)], limit=1)
-            if prod:
+            if compatible(prod):
                 return prod, "matched", "default_code"
         if self.description and len(self.description) >= 6:
-            prod = Product.search([("name", "=ilike", self.description.strip())], limit=1)
-            if prod:
-                return prod, "suggested", "name"
+            for prod in Product.search([("name", "=ilike", self.description.strip())], limit=5):
+                if compatible(prod):
+                    return prod, "suggested", "name"
         return Product, "new", False
 
     def _match_products(self):

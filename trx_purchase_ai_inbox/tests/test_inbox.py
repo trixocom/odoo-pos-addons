@@ -66,13 +66,18 @@ class TestPurchaseAiInbox(TransactionCase):
         with self.assertRaises(Exception):
             inbox.action_create_po()
         inbox.action_create_products()
+        self.assertTrue(l3.product_id.available_in_pos and l3.product_id.sale_ok and l3.product_id.active)
         self.assertEqual(l3.product_id.default_code, "QAT1")
         self.assertEqual(l3.product_id.barcode, "7799990000017")
         self.assertEqual(l3.product_id.list_price, 18.0)  # 9 × 2
         self.assertTrue(l3.product_id.categ_id)
+        incoming = self.env["stock.picking.type"].search([("code", "=", "incoming"), ("company_id", "=", self.company.id)], order="id desc", limit=1)
+        inbox.picking_type_id = incoming
         inbox.action_create_po()
         po = inbox.purchase_id
         self.assertEqual(po.state, "purchase")
+        self.assertEqual(po.picking_type_id, incoming)
+        self.assertEqual(po.picking_ids.picking_type_id, incoming)
         self.assertEqual(inbox.state, "done")
         self.assertEqual(po.partner_ref, "FACTURA A 00006-00038359")
         self.assertAlmostEqual(po.amount_untaxed, 252.0, places=2)
@@ -82,6 +87,37 @@ class TestPurchaseAiInbox(TransactionCase):
         self.assertAlmostEqual(seller.price, 90.0, places=4)
         rows = self.env["trx.product.price.history"].search([("product_tmpl_id", "=", self.p1.id), ("origin", "=", "invoice")])
         self.assertTrue(rows)
+
+    def test_publish_activates_archived_product(self):
+        """Un artículo reconocido pero archivado / no disponible en POS se activa al publicar."""
+        self.p2.write({"available_in_pos": False})
+        self.p2.action_archive()
+        data = dict(self.data)
+        data["lineas"] = [dict(self.data["lineas"][1])]
+        data["descuentos_globales"] = []
+        data["totales"] = {"neto_gravado": 50.0, "iva": 10.5, "total": 60.5}
+        self.inbox._apply_result(data, {})
+        line = self.inbox.line_ids
+        if not line.product_id:  # los archivados no se reconocen solos: se elige a mano
+            line.write({"product_id": self.p2.with_context(active_test=False).product_variant_ids[:1].id, "match_state": "matched", "match_by": "manual"})
+        self.inbox.action_publish_pos()
+        self.assertTrue(self.p2.active)
+        self.assertTrue(self.p2.available_in_pos)
+
+    def test_name_match_respects_ean(self):
+        """Mismo nombre pero otro EAN impreso: es otro artículo, no se asocia."""
+        data = dict(self.data)
+        data["lineas"] = [{"codigo_proveedor": "ZZ999", "ean": "7799990000024", "descripcion": "QA Puzzle 3D", "cantidad": 1,
+                           "precio_unitario": 10.0, "importe_linea": 10.0, "alicuota_iva": 21},
+                          {"codigo_proveedor": "ZZ998", "ean": "", "descripcion": "QA Puzzle 3D", "cantidad": 1,
+                           "precio_unitario": 10.0, "importe_linea": 10.0, "alicuota_iva": 21}]
+        data["descuentos_globales"] = []
+        data["totales"] = {"neto_gravado": 20.0, "iva": 4.2, "total": 24.2}
+        self.inbox._apply_result(data, {})
+        l1, l2 = self.inbox.line_ids.sorted("sequence")
+        self.assertEqual(l1.match_state, "new")          # EAN distinto al del artículo con ese nombre
+        self.assertEqual(l2.match_state, "suggested")    # sin EAN: el nombre es sólo una sugerencia
+        self.assertEqual(l2.product_id.product_tmpl_id, self.p1)
 
     def test_reject_own_company_and_remito(self):
         data = dict(self.data)

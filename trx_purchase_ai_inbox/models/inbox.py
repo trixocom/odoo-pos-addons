@@ -9,6 +9,8 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 from odoo.tools import float_compare, float_is_zero
 
+from odoo.addons.trx_pos_price_sync.models.pos_price_sync import _register_for_sync
+
 from .inbox_perception import KINDS, classify
 
 _logger = logging.getLogger(__name__)
@@ -105,6 +107,11 @@ class TrxPurchaseInbox(models.Model):
     count_matched = fields.Integer(compute="_compute_counts")
     count_new = fields.Integer(compute="_compute_counts")
     count_price_up = fields.Integer(compute="_compute_counts")
+    picking_type_id = fields.Many2one(
+        "stock.picking.type", string="Recibe en", check_company=True,
+        domain="[('code', '=', 'incoming'), ('company_id', '=', company_id)]",
+        help="Local / depósito donde entra la mercadería. La recepción aparece en la caja de ese local "
+             "(Recepciones del POS). Si se deja vacío se usa el depósito por defecto de la razón social.")
     purchase_id = fields.Many2one("purchase.order", string="Orden de compra", readonly=True, copy=False)
     picking_count = fields.Integer(compute="_compute_counts")
     perception_ids = fields.One2many("trx.purchase.inbox.perception", "inbox_id", string="Percepciones", copy=False)
@@ -362,8 +369,41 @@ class TrxPurchaseInbox(models.Model):
     # ---------------------------------------------------------------- acciones
     def action_create_products(self):
         self.ensure_one()
-        self.line_ids.filtered(lambda l: l.match_state != "matched").action_create_product()
+        lines = self.line_ids.filtered(lambda l: l.match_state != "matched")
+        lines.action_create_product()
+        self._publish_pos(lines.product_id.product_tmpl_id)
         return True
+
+    def _publish_pos(self, templates=None):
+        """Activa los artículos de la factura para el POS (activo, vendible, disponible en POS) y los publica
+        en los puntos de venta con sesión abierta: aparecen en la caja sin recargar."""
+        self.ensure_one()
+        templates = templates if templates is not None else self.line_ids.product_id.product_tmpl_id
+        if not templates:
+            return 0, 0
+        templates = templates.with_context(active_test=False)
+        to_activate = templates.filtered(lambda t: not (t.active and t.sale_ok and t.available_in_pos))
+        if to_activate:
+            # available_in_pos va en los valores: trx_pos_price_sync lo detecta y avisa a las cajas abiertas
+            to_activate.write({"active": True, "sale_ok": True, "available_in_pos": True})
+        activated = len(to_activate)
+        # el resto (ya activos) también se reenvía, por si la caja abrió antes de crearlos o cambió el precio
+        _register_for_sync(self.env, "product.template", (templates - to_activate).ids)
+        notified = self.env["pos.session"].sudo().search_count([("state", "=", "opened")])
+        self.message_post(body=_("Publicados en el POS: %(n)s artículo(s)%(act)s; avisados %(pos)s punto(s) de venta abiertos.",
+                                 n=len(templates), act=_(" (%s activado/s)", activated) if activated else "", pos=notified))
+        return activated, notified
+
+    def action_publish_pos(self):
+        self.ensure_one()
+        if not self.line_ids.product_id:
+            raise UserError(_("Todavía no hay artículos asociados a las líneas."))
+        activated, notified = self._publish_pos()
+        return {"type": "ir.actions.client", "tag": "display_notification", "params": {
+            "title": _("Publicado en el POS"), "type": "success", "sticky": False,
+            "message": _("%(n)s artículo(s) disponibles en el POS; %(pos)s punto(s) de venta abiertos actualizados.",
+                         n=len(self.line_ids.product_id.product_tmpl_id), pos=notified),
+        }}
 
     def _find_purchase_tax(self, rate):
         """IVA de compras con esa alícuota: por grupo de impuestos con código AFIP de IVA (independiente del idioma)."""
@@ -401,7 +441,11 @@ class TrxPurchaseInbox(models.Model):
                 "tax_ids": [(6, 0, tax.ids)] if tax else False,
                 "date_planned": fields.Datetime.now(),
             }))
+        if self.picking_type_id and self.picking_type_id.company_id != company:
+            raise UserError(_("El local de recepción %s no es de %s.", self.picking_type_id.display_name, company.name))
+        po_extra = {"picking_type_id": self.picking_type_id.id} if self.picking_type_id else {}
         po = PO.create({
+            **po_extra,
             "partner_id": self.partner_id.id,
             "company_id": company.id,
             "partner_ref": ref,
@@ -423,6 +467,7 @@ class TrxPurchaseInbox(models.Model):
             self.state = "review"
             po.activity_schedule("mail.mail_activity_data_todo", summary=_("Revisar factura %s: los totales no cierran (diferencia %s)", self.doc_number, round(self.amount_diff, 2)), user_id=self.env.uid)
             self.message_post(body=_("Orden de compra %s en borrador: los totales no cierran (diferencia %s). Revisá y confirmá a mano.", po.name, round(self.amount_diff, 2)))
+        self._publish_pos()
         for l in self.line_ids.filtered("price_up"):
             po.message_post(body=_("Aviso: %s vino a %s, %s %% sobre el último costo (%s).", l.product_id.display_name, round(l.price_net_untaxed, 2), round(l.price_up_pct * 100, 1), round(l.cost_current, 2)))
         return self.action_view_po()

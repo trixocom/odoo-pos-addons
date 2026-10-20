@@ -22,6 +22,9 @@
                             context="{'trx_busy': 'Generando la factura de proveedor', 'trx_busy_sub': 'Factura en borrador vinculada a la orden, con las percepciones como impuestos.', 'trx_busy_icon': 'fa-file-text-o'}"
                             confirm="Se genera la factura de proveedor en borrador, vinculada a la orden de compra (fiscal: con las percepciones como impuestos; no fiscal: en el diario NF, sin IVA). ¿Continuar?"/>
                     <button name="action_view_bill" type="object" string="Ver factura" invisible="not invoice_id"/>
+                    <button name="action_publish_pos" type="object" string="Publicar en POS" icon="fa-desktop"
+                            invisible="state in ('draft', 'rejected') or count_matched == 0"
+                            context="{'trx_busy': 'Publicando en el POS', 'trx_busy_sub': 'Activando los artículos y avisando a las cajas abiertas.', 'trx_busy_icon': 'fa-desktop'}"/>
                     <button name="action_reject" type="object" string="Rechazar" invisible="state in ('done', 'rejected')"/>
                     <button name="action_reset" type="object" string="Volver a nueva" invisible="state not in ('rejected', 'review', 'scanned')"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,scanned,done"/>
@@ -53,6 +56,8 @@
                             <field name="file" filename="file_name" readonly="state == 'done'"/>
                             <field name="file_name" invisible="1"/>
                             <field name="company_id" readonly="state == 'done'" options="{'no_create': True}"/>
+                            <field name="picking_type_id" readonly="purchase_id" options="{'no_create': True}"
+                                   placeholder="Depósito por defecto de la razón social"/>
                             <field name="partner_id" readonly="state == 'done'" options="{'no_create': True}"/>
                             <field name="partner_created" invisible="not partner_created"/>
                             <field name="purchase_id" invisible="not purchase_id"/>
@@ -177,6 +182,7 @@
                 <field name="name"/>
                 <field name="create_date" string="Recibida"/>
                 <field name="company_id"/>
+                <field name="picking_type_id" optional="show"/>
                 <field name="partner_id"/>
                 <field name="doc_number"/>
                 <field name="invoice_date"/>
