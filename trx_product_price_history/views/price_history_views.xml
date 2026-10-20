@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_trx_product_price_history_list" model="ir.ui.view">
+        <field name="name">trx.product.price.history.list</field>
+        <field name="model">trx.product.price.history</field>
+        <field name="arch" type="xml">
+            <list string="Historial de precios" create="false" edit="false"
+                  decoration-danger="variation_pct &gt; 0" decoration-success="variation_pct &lt; 0">
+                <field name="date"/>
+                <field name="default_code" optional="show"/>
+                <field name="product_tmpl_id"/>
+                <field name="price_type"/>
+                <field name="partner_id" optional="show"/>
+                <field name="company_id" optional="hide"/>
+                <field name="old_value" sum="Total anterior"/>
+                <field name="new_value" sum="Total nuevo"/>
+                <field name="variation" optional="hide"/>
+                <field name="variation_pct" widget="percentage" digits="[16,2]"/>
+                <field name="origin"/>
+                <field name="origin_ref" optional="show"/>
+                <field name="reason" optional="hide"/>
+                <field name="user_id" optional="show" widget="many2one_avatar_user"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_trx_product_price_history_pivot" model="ir.ui.view">
+        <field name="name">trx.product.price.history.pivot</field>
+        <field name="model">trx.product.price.history</field>
+        <field name="arch" type="xml">
+            <pivot string="Historial de precios" sample="1">
+                <field name="partner_id" type="row"/>
+                <field name="date" interval="month" type="col"/>
+                <field name="variation_pct" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_trx_product_price_history_graph" model="ir.ui.view">
+        <field name="name">trx.product.price.history.graph</field>
+        <field name="model">trx.product.price.history</field>
+        <field name="arch" type="xml">
+            <graph string="Historial de precios" type="line" sample="1">
+                <field name="date" interval="day"/>
+                <field name="new_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_trx_product_price_history_search" model="ir.ui.view">
+        <field name="name">trx.product.price.history.search</field>
+        <field name="model">trx.product.price.history</field>
+        <field name="arch" type="xml">
+            <search string="Historial de precios">
+                <field name="product_tmpl_id"/>
+                <field name="default_code"/>
+                <field name="partner_id"/>
+                <field name="origin_ref"/>
+                <filter name="pvp" string="PVP" domain="[('price_type', '=', 'list_price')]"/>
+                <filter name="supplier" string="Precio de proveedor" domain="[('price_type', '=', 'supplier_price')]"/>
+                <filter name="cost" string="Costo contable" domain="[('price_type', '=', 'standard_price')]"/>
+                <separator/>
+                <filter name="up" string="Subieron" domain="[('variation_pct', '&gt;', 0)]"/>
+                <filter name="down" string="Bajaron" domain="[('variation_pct', '&lt;', 0)]"/>
+                <separator/>
+                <filter name="this_month" string="Este mes" date="date" default_period="month"/>
+                <separator/>
+                    <filter name="group_product" string="Artículo" context="{'group_by': 'product_tmpl_id'}"/>
+                    <filter name="group_partner" string="Proveedor" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_price_type" string="Tipo" context="{'group_by': 'price_type'}"/>
+                    <filter name="group_origin" string="Origen" context="{'group_by': 'origin'}"/>
+                    <filter name="group_company" string="Razón social" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_month" string="Mes" context="{'group_by': 'date:month'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_trx_product_price_history" model="ir.actions.act_window">
+        <field name="name">Historial de precios</field>
+        <field name="res_model">trx.product.price.history</field>
+        <field name="view_mode">list,pivot,graph</field>
+        <field name="search_view_id" ref="view_trx_product_price_history_search"/>
+        <field name="context">{'search_default_this_month': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Todavía no hay cambios de precio registrados</p>
+            <p>Cada cambio de PVP, costo contable o precio de proveedor queda registrado acá con su valor anterior, el nuevo y la variación.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_trx_product_price_history" name="Historial de precios"
+              parent="purchase.purchase_report_main" action="action_trx_product_price_history" sequence="60"
+              groups="purchase.group_purchase_user"/>
+</odoo>
